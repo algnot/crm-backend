@@ -5,13 +5,13 @@ envsubst < /etc/odoo/odoo.conf.template > /etc/odoo/odoo.conf
 
 if [ "$SERVICE" = "migrator" ]; then
     echo "Running migration..."
-    /usr/bin/odoo -c /etc/odoo/odoo.conf -d odoo -u crm_custom --without-demo=all --stop-after-init
+    /usr/bin/odoo -c /etc/odoo/odoo.conf -d crm_backend -u crm_custom --without-demo=all --stop-after-init
 else
     if [ "$DEBUG" = "1" ]; then
         echo "Starting Odoo with debug..."
         python3 /mnt/extra-addons/debug_connect.py
     else
         echo "Starting Odoo..."
-        /usr/bin/odoo -c /etc/odoo/odoo.conf -d odoo --without-demo=all -u crm_custom
+        /usr/bin/odoo -c /etc/odoo/odoo.conf -d crm_backend --without-demo=all -u crm_custom
     fi
 fi

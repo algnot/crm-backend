@@ -1,0 +1,70 @@
+import re
+
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+
+HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
+
+
+class Inventory(models.Model):
+    _name = "partner"
+    _description = "Partner"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _sql_constraints = [
+        ("partner_slug_uniq", "unique(slug)", "Slug must be unique."),
+    ]
+
+    name = fields.Char(string="Name", tracking=True, required=True)
+    slug = fields.Char(string="Slug", tracking=True, required=True)
+    logo = fields.Image(string="Logo", max_width=1920, max_height=1920)
+
+    partner_line_liff_id = fields.Char(string="LIFF ID", tracking=True)
+    partner_line_channel_access_token = fields.Char(string="Channel Access Token", password="True" ,tracking=True)
+
+    description = fields.Text(string="Description", tracking=True)
+
+    ui_background_color = fields.Char(string="Background Color", tracking=True)
+    ui_button_color = fields.Char(string="Button Color", tracking=True)
+    ui_font_family = fields.Char(string="Font Family", tracking=True)
+    ui_text_color = fields.Char(string="Text Color", tracking=True)
+    ui_button_text_color = fields.Char(string="Button Text Color", tracking=True)
+    ui_success_color = fields.Char(string="Success Color", tracking=True)
+    ui_error_color = fields.Char(string="Error Color", tracking=True)
+    ui_welcome_title = fields.Char(string="Welcome Title", tracking=True)
+    ui_welcome_message = fields.Text(string="Welcome Message", tracking=True)
+    ui_contact_email = fields.Char(string="Contact Email", tracking=True)
+    ui_contact_phone = fields.Char(string="Contact Phone", tracking=True)
+    ui_crm_required_phone = fields.Boolean(string="Require Phone", default=False, tracking=True)
+    ui_crm_required_email = fields.Boolean(string="Require Email", default=False, tracking=True)
+    ui_custom_field_ids = fields.One2many(
+        "partner.custom.field",
+        "partner_id",
+        string="Custom Field",
+        tracking=True,
+    )
+
+    active = fields.Boolean(string="Active", default=True, tracking=True)
+
+    @api.constrains(
+        "ui_background_color",
+        "ui_button_color",
+        "ui_text_color",
+        "ui_button_text_color",
+        "ui_success_color",
+        "ui_error_color",
+    )
+    def _check_hex_color_fields(self):
+        color_field_names = [
+            name
+            for name, field in self._fields.items()
+            if name.endswith("_color") and field.type == "char"
+        ]
+
+        for record in self:
+            for field_name in color_field_names:
+                color = record[field_name]
+                if color and not HEX_COLOR_PATTERN.match(color):
+                    label = record._fields[field_name].string
+                    raise ValidationError(
+                        f"{label} must start with # followed by 6 hexadecimal digits."
+                    )

@@ -1,0 +1,23 @@
+{
+    "name": "CRM Custom Module",
+    "version": "1.0.0",
+    "summary": "CRM Custom Module",
+    "author": "tk dev",
+    "depends": ["base", "mail"],
+    "external_dependencies": {
+        "python": ["Pillow", "python-barcode"],
+    },
+    "assets": {
+        "web.assets_backend": [],
+    },
+    "data": [
+        "security/ir.model.access.csv",
+        "views/partner/table_view.xml",
+        "views/partner/form_view.xml",
+        "views/partner/action_view.xml",
+        "views/menu_view.xml",
+    ],
+    "installable": True,
+    "application": True,
+    "auto_install": False
+}

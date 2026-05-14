@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_partner,access.partner.user,model_partner,,1,1,1,1
+access_partner_custom_field,access.partner.custom.field,model_partner_custom_field,,1,1,1,1

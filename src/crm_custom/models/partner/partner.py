@@ -50,7 +50,28 @@ class Inventory(models.Model):
         string="Users",
     )
 
+    currency_ids = fields.One2many(
+        "crm.user.point.currency",
+        "partner_id",
+        string="Currencies",
+    )
+
     active = fields.Boolean(string="Active", default=True, tracking=True)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        partners = super().create(vals_list)
+
+        for partner in partners:
+            default_currency = partner.currency_ids.filtered("is_default")
+            if not default_currency:
+                self.env["crm.user.point.currency"].create({
+                    "name": "point",
+                    "is_default": True,
+                    "partner_id": partner.id,
+                })
+
+        return partners
 
     @api.constrains(
         "ui_background_color",

@@ -72,4 +72,6 @@ class GetOrCreateUserController(http.Controller):
             "phone": user.phone,
             "force_verify_phone": force_verify_phone,
             "force_verify_email": force_verify_email,
+            "birth_date": user.birth_date,
+            "gender": user.gender,
         }

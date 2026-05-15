@@ -32,10 +32,27 @@
                             <field name="display_name" readonly="1"/>
                             <field name="email" readonly="1"/>
                             <field name="phone" readonly="1"/>
+                            <field name="birth_date" readonly="1"/>
+                            <field name="gender" readonly="1"/>
                             <field name="is_email_verified" readonly="1"/>
                             <field name="is_phone_verified" readonly="1"/>
                         </group>
                     </group>
+
+                    <notebook>
+                        <page string="Points">
+                            <field name="point_ids" nolabel="1">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="currency_id" domain="[('partner_id', '=', parent.partner_id)]"/>
+                                    <field name="value"/>
+                                    <field name="type"/>
+                                    <field name="given_date"/>
+                                    <field name="expiration_date"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
 
                 </sheet>
                 <chatter>

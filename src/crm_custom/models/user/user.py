@@ -26,6 +26,13 @@ class User(models.Model):
     phone = fields.Char(string="Phone", tracking=True)
     is_phone_verified = fields.Boolean(string="Is Phone Verified", tracking=True)
 
+    birth_date = fields.Date(string="Birth Date", tracking=True)
+    gender = fields.Selection([
+        ("M", "Male"),
+        ("F", "Female"),
+        ("O", "Other")
+    ], string="Gender", tracking=True)
+
     active = fields.Boolean(string="Active", default=True, tracking=True)
 
     partner_id = fields.Many2one(
@@ -33,6 +40,12 @@ class User(models.Model):
         string="Partner",
         required=True,
         ondelete="cascade",
+    )
+
+    point_ids = fields.One2many(
+        "crm.user.point",
+        "user_id",
+        string="Points",
     )
 
     @api.depends("picture_url")

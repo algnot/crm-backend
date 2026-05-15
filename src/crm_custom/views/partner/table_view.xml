@@ -5,7 +5,7 @@
         <field name="model">partner</field>
         <field name="arch" type="xml">
             <list>
-                <field name="logo" width="60" widget="image"/>
+                <field name="logo" widget="image" options="{'size': [60, 60]}"/>
                 <field name="name"/>
                 <field name="slug"/>
             </list>

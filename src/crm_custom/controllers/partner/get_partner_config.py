@@ -1,29 +1,23 @@
-import json
+import os
 
 from odoo import http
-from odoo.http import Response, request
+from odoo.http import request
+from ....util.request import json_response
 
 
 class PartnerConfigController(http.Controller):
-    @http.route(
-        "/api/partner/<string:slug>",
-        type="http",
-        auth="public",
-        methods=["GET"],
-        csrf=False,
-        cors="*",
-    )
+
+    @http.route("/api/partner/<string:slug>", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def get_partner_config(self, slug, **kwargs):
         partner = request.env["partner"].sudo().search(
             [
                 ("slug", "=", slug),
-                ("active", "=", True),
             ],
             limit=1,
         )
 
         if not partner:
-            return self._json_response(
+            return json_response(
                 {
                     "error": "partner_not_found",
                     "message": "Partner not found.",
@@ -31,7 +25,7 @@ class PartnerConfigController(http.Controller):
                 status=404,
             )
 
-        return self._json_response(self._serialize_partner_config(partner))
+        return json_response(self._serialize_partner_config(partner))
 
     def _serialize_partner_config(self, partner):
         return {
@@ -78,11 +72,10 @@ class PartnerConfigController(http.Controller):
         if not partner.logo:
             return False
 
-        return f"/web/image/partner/{partner.id}/logo"
+        logo_path = f"/web/image/partner/{partner.id}/logo"
+        backend_path = os.getenv("BACKEND_PATH")
 
-    def _json_response(self, payload, status=200):
-        return Response(
-            json.dumps(payload, ensure_ascii=False),
-            status=status,
-            content_type="application/json; charset=utf-8",
-        )
+        if backend_path:
+            return f"{backend_path.rstrip('/')}{logo_path}"
+
+        return logo_path

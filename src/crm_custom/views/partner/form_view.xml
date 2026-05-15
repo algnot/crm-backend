@@ -41,8 +41,9 @@
                           <page string="UI Config">
                             <group>
                                 <field name="ui_background_color"/>
+                                <field name="ui_primary_color"/>
+                                <field name="ui_secondary_color"/>
                                 <field name="ui_button_color"/>
-                                <field name="ui_font_family"/>
                                 <field name="ui_text_color"/>
                                 <field name="ui_button_text_color"/>
                                 <field name="ui_success_color"/>

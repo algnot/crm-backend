@@ -24,8 +24,9 @@ class Inventory(models.Model):
     description = fields.Text(string="Description", tracking=True)
 
     ui_background_color = fields.Char(string="Background Color", tracking=True)
+    ui_primary_color = fields.Char(string="Primary Color", tracking=True)
+    ui_secondary_color = fields.Char(string="Secondary Color", tracking=True)
     ui_button_color = fields.Char(string="Button Color", tracking=True)
-    ui_font_family = fields.Char(string="Font Family", tracking=True)
     ui_text_color = fields.Char(string="Text Color", tracking=True)
     ui_button_text_color = fields.Char(string="Button Text Color", tracking=True)
     ui_success_color = fields.Char(string="Success Color", tracking=True)
@@ -41,6 +42,12 @@ class Inventory(models.Model):
         "partner_id",
         string="Custom Field",
         tracking=True,
+    )
+
+    user_ids = fields.One2many(
+        "crm.user",
+        "partner_id",
+        string="Users",
     )
 
     active = fields.Boolean(string="Active", default=True, tracking=True)

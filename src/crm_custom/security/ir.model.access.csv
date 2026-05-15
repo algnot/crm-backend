@@ -1,3 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_partner,access.partner.user,model_partner,,1,1,1,1
 access_partner_custom_field,access.partner.custom.field,model_partner_custom_field,,1,1,1,1
+access_crm_user,access.crm.user,model_crm_user,,1,1,1,1
+access_crm_otp,access.crm.otp,model_crm_otp,,1,0,0,1

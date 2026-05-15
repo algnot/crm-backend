@@ -5,3 +5,5 @@ access_crm_user,access.crm.user,model_crm_user,,1,1,1,1
 access_crm_otp,access.crm.otp,model_crm_otp,,1,0,0,1
 access_crm_user_point,access.crm.user.point,model_crm_user_point,,1,1,1,1
 access_crm_user_point_currency,access.crm.user.point.currency,model_crm_user_point_currency,,1,1,1,1
+access_crm_user_point_redeem,access.crm.user.point.redeem,model_crm_user_point_redeem,,1,1,1,1
+access_crm_user_point_redeem_generate_wizard,access.crm.user.point.redeem.generate.wizard,model_crm_user_point_redeem_generate_wizard,,1,1,1,1

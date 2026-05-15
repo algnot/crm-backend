@@ -56,7 +56,26 @@ class Inventory(models.Model):
         string="Currencies",
     )
 
+    point_redeem_ids = fields.One2many(
+        "crm.user.point.redeem",
+        "partner_id",
+        string="Point Redeems",
+    )
+
     active = fields.Boolean(string="Active", default=True, tracking=True)
+
+    def action_generate_redeem(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Generate Redeem QR",
+            "res_model": "crm.user.point.redeem.generate.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_partner_id": self.id,
+            },
+        }
 
     @api.model_create_multi
     def create(self, vals_list):

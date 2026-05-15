@@ -1,0 +1,168 @@
+from html import escape
+from urllib.parse import quote
+import secrets
+
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+
+
+class UserPointRedeem(models.Model):
+    _name = "crm.user.point.redeem"
+    _description = "Point Redeem"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _sql_constraints = [
+        ("point_redeem_code_uniq", "unique(code)", "Redeem code must be unique."),
+    ]
+
+    name = fields.Char(string="Name", required=True, tracking=True)
+    value = fields.Float(string="Value", required=True, tracking=True)
+    code = fields.Char(
+        string="Code",
+        tracking=True,
+        required=True,
+        default=lambda self: self._generate_code(),
+        copy=False,
+        readonly=True,
+    )
+    type = fields.Selection([
+        ("earn", "Earn"),
+        ("transfer", "Transfer"),
+        ("burn", "Burn"),
+    ], string="Type", required=True, default="earn", tracking=True)
+    limit_per_user = fields.Integer(string="Limit per user", default=1, tracking=True)
+    limit_per_qr = fields.Integer(string="Limit per QR", default=1, tracking=True)
+    expiration_date = fields.Datetime(string="Expiration Date", tracking=True)
+    active = fields.Boolean(string="Active", default=True, tracking=True)
+
+    redeem_url = fields.Char(
+        string="Redeem URL",
+        compute="_compute_redeem_url",
+    )
+    qr_code_preview = fields.Html(
+        string="QR Code",
+        compute="_compute_qr_code_preview",
+        sanitize=False,
+    )
+    redeemed_count = fields.Integer(
+        string="Redeemed Count",
+        compute="_compute_redeemed_count",
+    )
+
+    point_ids = fields.One2many(
+        "crm.user.point",
+        "point_redeem_id",
+        string="Point Redeem",
+    )
+
+    partner_id = fields.Many2one(
+        "partner",
+        string="Partner",
+        required=True,
+        ondelete="cascade",
+    )
+
+    currency_id = fields.Many2one(
+        "crm.user.point.currency",
+        string="Currency",
+        required=True,
+        ondelete="restrict",
+    )
+
+    @api.model
+    def _generate_code(self):
+        return secrets.token_urlsafe(16)
+
+    @api.depends("code", "partner_id.slug", "partner_id.partner_line_liff_id")
+    def _compute_redeem_url(self):
+        base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url")
+        for record in self:
+            if not record.code or not record.partner_id:
+                record.redeem_url = False
+                continue
+
+            liff_id = record.partner_id.partner_line_liff_id
+            if liff_id:
+                record.redeem_url = (
+                    f"https://liff.line.me/{quote(liff_id)}"
+                    f"?redeem_code={quote(record.code)}"
+                    f"&partner={quote(record.partner_id.slug or '')}"
+                )
+                continue
+
+            record.redeem_url = (
+                f"{base_url}/api/partner/{quote(record.partner_id.slug or '')}"
+                f"/redeem/{quote(record.code)}"
+            )
+
+    @api.depends("redeem_url")
+    def _compute_qr_code_preview(self):
+        for record in self:
+            if not record.redeem_url:
+                record.qr_code_preview = False
+                continue
+
+            encoded_url = quote(record.redeem_url, safe="")
+            qr_url = f"/report/barcode/QR/{encoded_url}?width=220&height=220"
+            record.qr_code_preview = (
+                f'<img src="{escape(qr_url, quote=True)}" '
+                'style="width:220px;height:220px;" alt="Redeem QR Code"/>'
+            )
+
+    @api.depends("point_ids")
+    def _compute_redeemed_count(self):
+        for record in self:
+            record.redeemed_count = len(record.point_ids)
+
+    def redeem_for_user(self, user):
+        self.ensure_one()
+        self._check_can_redeem(user)
+
+        return self.env["crm.user.point"].sudo().create({
+            "name": self.name,
+            "value": self.value,
+            "type": self.type,
+            "given_date": fields.Datetime.now(),
+            "currency_id": self.currency_id.id,
+            "user_id": user.id,
+            "point_redeem_id": self.id,
+        })
+
+    def _check_can_redeem(self, user):
+        self.ensure_one()
+        if not self.active:
+            raise ValidationError("Redeem QR code is inactive.")
+
+        if self.expiration_date and fields.Datetime.now() > self.expiration_date:
+            raise ValidationError("Redeem QR code is expired.")
+
+        if user.partner_id != self.partner_id:
+            raise ValidationError("User does not belong to this partner.")
+
+        if self.currency_id.partner_id != self.partner_id:
+            raise ValidationError("Point currency must belong to this partner.")
+
+        if self.limit_per_qr and self.redeemed_count >= self.limit_per_qr:
+            raise ValidationError("Redeem QR code has reached its limit.")
+
+        user_redeem_count = self.env["crm.user.point"].sudo().search_count([
+            ("point_redeem_id", "=", self.id),
+            ("user_id", "=", user.id),
+        ])
+        if self.limit_per_user and user_redeem_count >= self.limit_per_user:
+            raise ValidationError("User has reached the redeem limit.")
+
+    @api.constrains("limit_per_user", "limit_per_qr")
+    def _check_limits(self):
+        for record in self:
+            if record.limit_per_user < 0 or record.limit_per_qr < 0:
+                raise ValidationError("Limits must be zero or greater.")
+
+    @api.constrains("currency_id", "partner_id")
+    def _check_currency_partner(self):
+        for record in self:
+            if (
+                record.currency_id
+                and record.partner_id
+                and record.currency_id.partner_id != record.partner_id
+            ):
+                raise ValidationError("Point currency must belong to this partner.")

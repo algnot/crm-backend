@@ -18,6 +18,8 @@
         "views/user/table_view.xml",
         "views/user/form_view.xml",
         "views/user/action_view.xml",
+        "views/user/point_redeem_view.xml",
+        "views/user/point_redeem_generate_wizard_view.xml",
         "views/system/otp_table_view.xml",
         "views/system/otp_form_view.xml",
         "views/system/otp_action_view.xml",

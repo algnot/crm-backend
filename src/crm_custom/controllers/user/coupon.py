@@ -1,5 +1,5 @@
 import json
-
+import os
 from odoo import fields, http
 from odoo.exceptions import ValidationError
 from odoo.http import request
@@ -179,7 +179,7 @@ class CouponController(http.Controller):
         return {
             "id": coupon.id,
             "name": coupon.name,
-            "image_url": f"/web/image/partner.coupon/{coupon.id}/image" if coupon.image else False,
+            "image_url": f"{os.getenv('BACKEND_PATH')}/web/image/partner.coupon/{coupon.id}/image" if coupon.image else False,
             "value": coupon.value,
             "start_time": fields.Datetime.to_string(coupon.start_time),
             "end_time": fields.Datetime.to_string(coupon.end_time),

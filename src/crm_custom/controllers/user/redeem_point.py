@@ -42,7 +42,7 @@ class RedeemPointController(http.Controller):
         )
         if not user:
             return json_response(
-                {"error": "user_not_found", "message": "User not found."},
+                {"error": "user_not_found", "message": "ไม่พบผู้ใช้งานดังกล่าว"},
                 status=404,
             )
 
@@ -79,7 +79,7 @@ class RedeemPointController(http.Controller):
                 "partner": False,
                 "redeem": False,
                 "error": json_response(
-                    {"error": "partner_not_found", "message": "Partner not found."},
+                    {"error": "partner_not_found", "message": "ไม่พบ Client โปรดติดต่อเจ้าหน้าที่"},
                     status=404,
                 ),
             }
@@ -96,7 +96,7 @@ class RedeemPointController(http.Controller):
                 "partner": partner,
                 "redeem": False,
                 "error": json_response(
-                    {"error": "redeem_not_found", "message": "Redeem QR not found."},
+                    {"error": "redeem_not_found", "message": "QR Code ไม่ถูกต้อง"},
                     status=404,
                 ),
             }

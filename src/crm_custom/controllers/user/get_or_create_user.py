@@ -27,7 +27,7 @@ class GetOrCreateUserController(http.Controller):
             return json_response(
                 {
                     "error": "partner_not_found",
-                    "message": "Partner not found.",
+                    "message": "ไม่พบ Client ดังกล่าวโปรดติดต่อเจ้าหน้าที่",
                 },
                 status=404,
             )

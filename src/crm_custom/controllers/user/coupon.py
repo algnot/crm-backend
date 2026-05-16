@@ -105,7 +105,7 @@ class CouponController(http.Controller):
         ], limit=1)
         if not user_coupon:
             return json_response(
-                {"error": "coupon_not_found", "message": "Coupon not found."},
+                {"error": "coupon_not_found", "message": "ไม่พบ coupon ดังกล่าว"},
                 status=404,
             )
 
@@ -127,7 +127,7 @@ class CouponController(http.Controller):
             return {
                 "partner": False,
                 "error": json_response(
-                    {"error": "partner_not_found", "message": "Partner not found."},
+                    {"error": "partner_not_found", "message": "ไม่พบ Client กรุณาลองอีกครั้งหรือติดต่อเจ้าหน้าที่"},
                     status=404,
                 ),
             }
@@ -155,7 +155,7 @@ class CouponController(http.Controller):
                 "partner": partner_response["partner"],
                 "coupon": False,
                 "error": json_response(
-                    {"error": "coupon_not_found", "message": "Coupon not found."},
+                    {"error": "coupon_not_found", "message": "ไม่พบ Coupon ดังกล่าว"},
                     status=404,
                 ),
             }
@@ -175,7 +175,7 @@ class CouponController(http.Controller):
             return {
                 "user": False,
                 "error": json_response(
-                    {"error": "user_not_found", "message": "User not found."},
+                    {"error": "user_not_found", "message": "ไม่พบผู้ใช้งานดังกล่าว"},
                     status=404,
                 ),
             }

@@ -56,7 +56,7 @@ class UserCoupon(models.Model):
             if record.is_used:
                 continue
             if record.expiration_date and now > record.expiration_date:
-                raise ValidationError("Coupon is expired.")
+                raise ValidationError("Coupon หมดอายุแล้ว")
             record.write({
                 "is_used": True,
                 "used_date": now,

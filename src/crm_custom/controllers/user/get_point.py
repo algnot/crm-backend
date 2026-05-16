@@ -41,7 +41,7 @@ class GetPointController(http.Controller):
                 "error": json_response(
                     {
                         "error": "partner_not_found",
-                        "message": "Partner not found.",
+                        "message": "ไม่พบ Client โปรดติดต่อเจ้าหน้าที่",
                     },
                     status=404,
                 ),
@@ -61,7 +61,7 @@ class GetPointController(http.Controller):
                 "error": json_response(
                     {
                         "error": "user_not_found",
-                        "message": "User not found.",
+                        "message": "ไม่พบผู้ใช้งานดังกล่าว",
                     },
                     status=404,
                 ),

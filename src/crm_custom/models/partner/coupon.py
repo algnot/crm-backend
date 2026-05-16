@@ -92,25 +92,25 @@ class PartnerCoupon(models.Model):
         now = fields.Datetime.now()
 
         if user.partner_id != self.partner_id:
-            raise ValidationError("User does not belong to this partner.")
+            raise ValidationError("ผู้ใช้อยู่นอกเหนือ Application นี้")
 
         if self.currency_id.partner_id != self.partner_id:
-            raise ValidationError("Coupon currency must belong to this partner.")
+            raise ValidationError("Coupon Currency อยู่นอกเหนือ Application นี้")
 
         if self.value <= 0:
-            raise ValidationError("Coupon value must be greater than zero.")
+            raise ValidationError("Value ต้องมากกว่า 0")
 
         if self.random_range <= 0:
-            raise ValidationError("Random range must be greater than zero.")
+            raise ValidationError("Random range ต้องมากกว่า 0")
 
         if self.start_time and now < self.start_time:
-            raise ValidationError("Coupon is not available yet.")
+            raise ValidationError("Coupon ยังไม่ได้เปิดใช้ตอนนี้")
 
         if self.end_time and now > self.end_time:
-            raise ValidationError("Coupon is expired.")
+            raise ValidationError("Coupon หมดอายุแล้ว")
 
         if self._get_user_balance(user) < self.value:
-            raise ValidationError("User does not have enough points.")
+            raise ValidationError("ผู้ใช้มีแต้มไม่เพียงพอ")
 
     def _get_user_balance(self, user):
         points = self.env["crm.user.point"].sudo().search([
@@ -133,23 +133,23 @@ class PartnerCoupon(models.Model):
             if not self.env["crm.user.coupon"].sudo().search_count([("code", "=", code)]):
                 return code
 
-        raise ValidationError("Could not generate a unique coupon code.")
+        raise ValidationError("ไม่สามารถสร้าง Coupon Code ที่ซ้ำกันได้")
 
     @api.constrains("value", "random_range", "code_expiry_interval")
     def _check_coupon_numbers(self):
         for record in self:
             if record.value < 0:
-                raise ValidationError("Coupon value must be zero or greater.")
+                raise ValidationError("Coupon value ต้องมากกว่า 0")
             if record.random_range <= 0:
-                raise ValidationError("Random range must be greater than zero.")
+                raise ValidationError("Random range ต้องมากกว่า 0")
             if record.code_expiry_interval < 0:
-                raise ValidationError("Expiry interval must be zero or greater.")
+                raise ValidationError("Expiry interval ต้องมากกว่าหรือเท่ากับ 0")
 
     @api.constrains("start_time", "end_time")
     def _check_coupon_dates(self):
         for record in self:
             if record.start_time and record.end_time and record.start_time > record.end_time:
-                raise ValidationError("Start date must be before end date.")
+                raise ValidationError("Start date ต้องมากกว่า end date.")
 
     @api.constrains("currency_id", "partner_id")
     def _check_currency_partner(self):
@@ -159,4 +159,4 @@ class PartnerCoupon(models.Model):
                 and record.partner_id
                 and record.currency_id.partner_id != record.partner_id
             ):
-                raise ValidationError("Coupon currency must belong to this partner.")
+                raise ValidationError("Coupon currency อยู่นอกเหนือ Application นี้")

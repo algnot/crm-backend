@@ -29,13 +29,13 @@ class VerifyPhoneController(http.Controller):
 
         if not record:
             return json_response(
-                {"error": "invalid_otp", "message": "Invalid OTP"},
+                {"error": "invalid_otp", "message": "รหัส OTP ไม่ถูกต้อง"},
                 status=400,
             )
 
         if record.otp != otp:
             return json_response(
-                {"error": "invalid_otp", "message": "Invalid OTP"},
+                {"error": "invalid_otp", "message": "รหัส OTP ไม่ถูกต้อง"},
                 status=400,
             )
 
@@ -48,7 +48,7 @@ class VerifyPhoneController(http.Controller):
 
         if not user:
             return json_response(
-                {"error": "not_found_user", "message": "User Not Found"},
+                {"error": "not_found_user", "message": "ไม่พบผู้ใช้"},
                 status=400,
             )
 

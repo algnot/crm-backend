@@ -29,13 +29,13 @@ class VerifyEmailController(http.Controller):
 
         if not record:
             return json_response(
-                {"error": "invalid_otp", "message": "Invalid OTP"},
+                {"error": "invalid_otp", "message": "รหัส OTP ไม่ถูกต้อง"},
                 status=400,
             )
 
         if record.otp != otp:
             return json_response(
-                {"error": "invalid_otp", "message": "Invalid OTP"},
+                {"error": "invalid_otp", "message": "รหัส OTP ไม่ถูกต้อง"},
                 status=400,
             )
 

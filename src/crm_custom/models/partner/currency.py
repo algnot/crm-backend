@@ -56,4 +56,4 @@ class PartnerPointCurrency(models.Model):
                 ("id", "!=", record.id),
             ])
             if default_count:
-                raise ValidationError("Only one default currency is allowed per partner.")
+                raise ValidationError("สามารถตั้งค่า Default ได้เพียง 1 Currency เท่านั้น")

@@ -27,7 +27,7 @@ class SubmitEmailController(http.Controller):
             return json_response(
                 {
                     "error": "partner_not_found",
-                    "message": "Partner not found.",
+                    "message": "ไม่พบ Client โปรดติดต่อเจ้าหน้าที่",
                 },
                 status=404,
             )
@@ -45,14 +45,14 @@ class SubmitEmailController(http.Controller):
         if user.is_email_verified and user.email == email:
             return json_response({
                     "error": "already_verified_email",
-                    "message": "Already Verified Email.",
+                    "message": "อีเมลห้ามซ้ำกับของเดิม",
             },
             status=400,
         )
 
         if not user:
             return json_response(
-                {"error": "user not found", "message": "Not Found User"},
+                {"error": "user not found", "message": "ไม่พบผู้ใช้งานดังกล่าวในระบบ"},
                 status=400,
             )
 

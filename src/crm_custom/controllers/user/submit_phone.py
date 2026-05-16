@@ -27,7 +27,7 @@ class SubmitPhoneController(http.Controller):
             return json_response(
                 {
                     "error": "partner_not_found",
-                    "message": "Partner not found.",
+                    "message": "ไม่พบ Client โปรดติดต่อผู้ดูแลระบบ",
                 },
                 status=404,
             )
@@ -45,14 +45,14 @@ class SubmitPhoneController(http.Controller):
         if user.is_phone_verified and user.phone == phone:
             return json_response({
                     "error": "already_verified_phone",
-                    "message": "Already Verified Phone.",
+                    "message": "ไม่สามารถใช้เบอร์โทรเดิมได้",
             },
             status=400,
         )
 
         if not user:
             return json_response(
-                {"error": "user not found", "message": "Not Found User"},
+                {"error": "user not found", "message": "ไม่พบผู้ใช้งานดังกล่าว"},
                 status=400,
             )
 

@@ -213,6 +213,12 @@ class CouponController(http.Controller):
             "expiration_date": fields.Datetime.to_string(coupon.expiration_date),
             "is_used": coupon.is_used,
             "used_date": fields.Datetime.to_string(coupon.used_date),
+            "coupon": {
+                "id": coupon.coupon_id.id,
+                "name": coupon.coupon_id.name,
+                "term_and_condition": coupon.coupon_id.term_and_condition,
+                "image_url": f"{os.getenv('BACKEND_PATH')}/web/image/partner.coupon/{coupon.coupon_id.id}/image" if coupon.coupon_id.image else False,
+            },
             "currency": {
                 "id": coupon.currency_id.id,
                 "name": coupon.currency_id.name,

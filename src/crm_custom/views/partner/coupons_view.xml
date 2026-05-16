@@ -12,6 +12,7 @@
                             <field name="name"/>
                             <field name="currency_id" domain="[('partner_id', '=', partner_id)]"/>
                             <field name="value"/>
+                            <field name="term_and_condition"/>
                         </group>
                         <group>
                             <field name="image" widget="image" options="{'size': [128, 128]}"/>

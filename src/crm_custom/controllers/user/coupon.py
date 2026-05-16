@@ -27,6 +27,16 @@ class CouponController(http.Controller):
             "coupon": [self._serialize_partner_coupon(coupon) for coupon in coupons],
         })
 
+    @http.route("/api/partner/<string:slug>/coupon/<int:coupon_id>", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
+    def get_coupon_by_id(self, slug, coupon_id, **kwargs):
+        coupon_response = self._get_coupon(slug, coupon_id)
+        if coupon_response["error"]:
+            return coupon_response["error"]
+
+        return json_response({
+            "coupon": self._serialize_partner_coupon(coupon_response["coupon"]),
+        })
+
     @http.route("/api/partner/<string:slug>/coupon/<int:coupon_id>/redeem", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
     def redeem_coupon(self, slug, coupon_id, **kwargs):
         try:
@@ -181,6 +191,7 @@ class CouponController(http.Controller):
             "name": coupon.name,
             "image_url": f"{os.getenv('BACKEND_PATH')}/web/image/partner.coupon/{coupon.id}/image" if coupon.image else False,
             "value": coupon.value,
+            "term_and_condition": coupon.term_and_condition,
             "start_time": fields.Datetime.to_string(coupon.start_time),
             "end_time": fields.Datetime.to_string(coupon.end_time),
             "code_expiry_interval": coupon.code_expiry_interval,

@@ -99,6 +99,7 @@
                                     <field name="image" widget="image"/>
                                     <field name="currency_id"/>
                                     <field name="value"/>
+                                    <field name="term_and_condition"/>
                                     <field name="prefix_code"/>
                                     <field name="random_range"/>
                                     <field name="suffix_code"/>

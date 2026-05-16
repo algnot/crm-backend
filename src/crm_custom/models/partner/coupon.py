@@ -18,6 +18,7 @@ class PartnerCoupon(models.Model):
     suffix_code = fields.Char(string="Suffix Code", tracking=True)
     value = fields.Float(string="Value", required=True, default=0, tracking=True)
     start_time = fields.Datetime(string="Start Date", default=fields.Datetime.now, required=True, tracking=True)
+    term_and_condition = fields.Text(string="Term and Condition", tracking=True)
     code_expiry_interval = fields.Integer(
         string="Expiry Interval (Hours)",
         default=24,

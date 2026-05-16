@@ -38,6 +38,7 @@ class GetOrCreateUserController(http.Controller):
         user = request.env["crm.user"].search(
             [
                 ("line_user_id", "=", user_id),
+                ("partner_id", "=", partner.id),
             ],
             limit=1,
         )

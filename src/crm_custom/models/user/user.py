@@ -9,7 +9,7 @@ class User(models.Model):
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "create_date desc"
     _sql_constraints = [
-        ("user_line_user_id_uniq", "unique(line_user_id)", "LINE user ID must be unique."),
+        ("user_line_user_id_uniq", "unique(line_user_id, partner_id)", "LINE user ID and Partner combination must be unique."),
     ]
 
     display_name = fields.Char(string="Display Name", tracking=True, required=True)

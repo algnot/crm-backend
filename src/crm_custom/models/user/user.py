@@ -48,6 +48,12 @@ class User(models.Model):
         string="Points",
     )
 
+    coupon_ids = fields.One2many(
+        "crm.user.coupon",
+        "user_id",
+        string="Coupons",
+    )
+
     @api.depends("picture_url")
     def _compute_picture_preview(self):
         for record in self:

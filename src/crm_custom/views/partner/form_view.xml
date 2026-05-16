@@ -7,6 +7,7 @@
             <form>
                 <header>
                     <button name="action_generate_redeem" string="Generate Redeem" type="object" class="btn-primary"/>
+                    <button name="action_generate_coupon" string="Generate Coupon" type="object" class="btn-secondary"/>
                 </header>
                 <sheet>
                     <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
@@ -88,6 +89,23 @@
                                     <field name="redeemed_count"/>
                                     <field name="expiration_date"/>
                                     <field name="active"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Coupons">
+                            <field name="coupon_ids" nolabel="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="image" widget="image"/>
+                                    <field name="currency_id"/>
+                                    <field name="value"/>
+                                    <field name="prefix_code"/>
+                                    <field name="random_range"/>
+                                    <field name="suffix_code"/>
+                                    <field name="start_time"/>
+                                    <field name="code_expiry_interval"/>
+                                    <field name="end_time"/>
+                                    <field name="redeemed_count"/>
                                 </list>
                             </field>
                         </page>

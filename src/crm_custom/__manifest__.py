@@ -1,6 +1,6 @@
 {
     "name": "CRM Custom Module",
-    "version": "1.0.0",
+    "version": "1.0.3",
     "summary": "CRM Custom Module",
     "author": "tk dev",
     "depends": ["base", "mail"],
@@ -14,6 +14,7 @@
         "security/ir.model.access.csv",
         "views/partner/table_view.xml",
         "views/partner/form_view.xml",
+        "views/partner/coupons_view.xml",
         "views/partner/action_view.xml",
         "views/user/table_view.xml",
         "views/user/form_view.xml",

@@ -5,3 +5,4 @@ from . import submit_phone
 from . import verify_email
 from . import submit_email
 from . import redeem_point
+from . import coupon

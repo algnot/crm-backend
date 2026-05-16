@@ -20,7 +20,7 @@ class UserPointRedeemGenerateWizard(models.TransientModel):
         ("burn", "Burn"),
     ], string="Type", required=True, default="earn")
     currency_id = fields.Many2one(
-        "crm.user.point.currency",
+        "crm.partner.currency",
         string="Currency",
         required=True,
     )
@@ -45,7 +45,7 @@ class UserPointRedeemGenerateWizard(models.TransientModel):
         if self.currency_id.partner_id != self.partner_id:
             raise ValidationError("Point currency must belong to this partner.")
 
-        redeem = self.env["crm.user.point.redeem"].create({
+        redeem = self.env["crm.partner.point.redeem"].create({
             "partner_id": self.partner_id.id,
             "name": self.name,
             "value": self.value,
@@ -59,7 +59,7 @@ class UserPointRedeemGenerateWizard(models.TransientModel):
         return {
             "type": "ir.actions.act_window",
             "name": "Redeem QR",
-            "res_model": "crm.user.point.redeem",
+            "res_model": "crm.partner.point.redeem",
             "res_id": redeem.id,
             "view_mode": "form",
             "target": "current",

@@ -55,15 +55,21 @@ class Inventory(models.Model):
     )
 
     currency_ids = fields.One2many(
-        "crm.user.point.currency",
+        "crm.partner.currency",
         "partner_id",
         string="Currencies",
     )
 
     point_redeem_ids = fields.One2many(
-        "crm.user.point.redeem",
+        "crm.partner.point.redeem",
         "partner_id",
         string="Point Redeems",
+    )
+
+    coupon_ids = fields.One2many(
+        "partner.coupon",
+        "partner_id",
+        string="Coupons",
     )
 
     active = fields.Boolean(string="Active", default=True, tracking=True)
@@ -81,6 +87,21 @@ class Inventory(models.Model):
             },
         }
 
+    def action_generate_coupon(self):
+        self.ensure_one()
+        currency = self.currency_ids.filtered("is_default")[:1] or self.currency_ids[:1]
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Generate Coupon",
+            "res_model": "partner.coupon",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_partner_id": self.id,
+                "default_currency_id": currency.id,
+            },
+        }
+
     @api.model_create_multi
     def create(self, vals_list):
         partners = super().create(vals_list)
@@ -88,7 +109,7 @@ class Inventory(models.Model):
         for partner in partners:
             default_currency = partner.currency_ids.filtered("is_default")
             if not default_currency:
-                self.env["crm.user.point.currency"].create({
+                self.env["crm.partner.currency"].create({
                     "name": "point",
                     "is_default": True,
                     "partner_id": partner.id,

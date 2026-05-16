@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_coupon_form" model="ir.ui.view">
+        <field name="name">partner.coupon.form</field>
+        <field name="model">partner.coupon</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="partner_id" readonly="1"/>
+                            <field name="name"/>
+                            <field name="currency_id" domain="[('partner_id', '=', partner_id)]"/>
+                            <field name="value"/>
+                        </group>
+                        <group>
+                            <field name="image" widget="image" options="{'size': [128, 128]}"/>
+                        </group>
+                    </group>
+                    <group string="Code">
+                        <field name="prefix_code"/>
+                        <field name="random_range"/>
+                        <field name="suffix_code"/>
+                    </group>
+                    <group string="Availability">
+                        <field name="start_time"/>
+                        <field name="code_expiry_interval"/>
+                        <field name="end_time"/>
+                    </group>
+                </sheet>
+                <chatter>
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids" options="{'post_refresh': 'recipients'}"/>
+                </chatter>
+            </form>
+        </field>
+    </record>
+</odoo>

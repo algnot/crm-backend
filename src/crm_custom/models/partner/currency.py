@@ -2,8 +2,8 @@ from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
 
-class UserPointCurrency(models.Model):
-    _name = "crm.user.point.currency"
+class PartnerPointCurrency(models.Model):
+    _name = "crm.partner.currency"
     _description = "Currency"
     _inherit = ["mail.thread", "mail.activity.mixin"]
 

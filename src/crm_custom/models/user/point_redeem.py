@@ -6,8 +6,8 @@ from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
 
-class UserPointRedeem(models.Model):
-    _name = "crm.user.point.redeem"
+class PartnerPointRedeem(models.Model):
+    _name = "crm.partner.point.redeem"
     _description = "Point Redeem"
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _sql_constraints = [
@@ -62,7 +62,7 @@ class UserPointRedeem(models.Model):
     )
 
     currency_id = fields.Many2one(
-        "crm.user.point.currency",
+        "crm.partner.currency",
         string="Currency",
         required=True,
         ondelete="restrict",

@@ -52,6 +52,20 @@
                                 </list>
                             </field>
                         </page>
+                        <page string="Coupons">
+                            <field name="coupon_ids" nolabel="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="code"/>
+                                    <field name="currency_id"/>
+                                    <field name="value"/>
+                                    <field name="acquired_date"/>
+                                    <field name="expiration_date"/>
+                                    <field name="is_used"/>
+                                    <field name="used_date"/>
+                                </list>
+                            </field>
+                        </page>
                     </notebook>
 
                 </sheet>

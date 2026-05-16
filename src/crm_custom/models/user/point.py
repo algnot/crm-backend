@@ -18,7 +18,7 @@ class UserPoint(models.Model):
     expiration_date = fields.Datetime(string="Expiration Date", tracking=True)
 
     currency_id = fields.Many2one(
-        "crm.user.point.currency",
+        "crm.partner.currency",
         string="Currency",
         required=True,
         ondelete="cascade",
@@ -32,7 +32,7 @@ class UserPoint(models.Model):
     )
 
     point_redeem_id = fields.Many2one(
-        "crm.user.point.redeem",
+        "crm.partner.point.redeem",
         string="Redeem",
     )
 

@@ -84,7 +84,7 @@ class RedeemPointController(http.Controller):
                 ),
             }
 
-        redeem = request.env["crm.user.point.redeem"].sudo().search(
+        redeem = request.env["crm.partner.point.redeem"].sudo().search(
             [
                 ("partner_id", "=", partner.id),
                 ("code", "=", code),

@@ -10,6 +10,7 @@ class PartnerCoupon(models.Model):
     _name = "partner.coupon"
     _description = "Partner Coupon"
     _inherit = ["mail.thread", "mail.activity.mixin"]
+    _order = "create_date desc"
 
     name = fields.Char(string="Name", required=True, tracking=True)
     image = fields.Image(string="Image", max_width=1000, max_height=1000)

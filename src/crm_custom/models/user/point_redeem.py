@@ -10,6 +10,7 @@ class PartnerPointRedeem(models.Model):
     _name = "crm.partner.point.redeem"
     _description = "Point Redeem"
     _inherit = ["mail.thread", "mail.activity.mixin"]
+    _order = "create_date desc"
     _sql_constraints = [
         ("point_redeem_code_uniq", "unique(code)", "Redeem code must be unique."),
     ]

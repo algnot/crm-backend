@@ -9,6 +9,7 @@ from odoo.exceptions import ValidationError
 class OTP(models.Model):
     _name = "crm.otp"
     _description = "OTP"
+    _order = "create_date desc"
     _REF_ALPHABET = string.ascii_letters + string.digits
 
     key = fields.Char(string="Key")

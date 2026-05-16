@@ -6,6 +6,7 @@ class UserCoupon(models.Model):
     _name = "crm.user.coupon"
     _description = "User Coupon"
     _inherit = ["mail.thread", "mail.activity.mixin"]
+    _order = "create_date desc"
     _sql_constraints = [
         ("user_coupon_code_uniq", "unique(code)", "Coupon code must be unique."),
     ]

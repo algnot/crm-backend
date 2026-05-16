@@ -6,6 +6,7 @@ class UserPoint(models.Model):
     _name = "crm.user.point"
     _description = "Point"
     _inherit = ["mail.thread", "mail.activity.mixin"]
+    _order = "create_date desc"
 
     name = fields.Char(string="Name", required=True)
     value = fields.Float(string="Value", tracking=True, required=True)

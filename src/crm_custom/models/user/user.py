@@ -7,6 +7,7 @@ class User(models.Model):
     _name = "crm.user"
     _description = "User"
     _inherit = ["mail.thread", "mail.activity.mixin"]
+    _order = "create_date desc"
     _sql_constraints = [
         ("user_line_user_id_uniq", "unique(line_user_id)", "LINE user ID must be unique."),
     ]

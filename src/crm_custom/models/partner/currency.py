@@ -6,6 +6,7 @@ class PartnerPointCurrency(models.Model):
     _name = "crm.partner.currency"
     _description = "Currency"
     _inherit = ["mail.thread", "mail.activity.mixin"]
+    _order = "create_date desc"
 
     name = fields.Char(string="Name", required=True)
     is_default = fields.Boolean(default=False)

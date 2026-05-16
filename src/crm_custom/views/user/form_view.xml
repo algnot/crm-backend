@@ -29,20 +29,20 @@
                         <group string="General Information">
                             <field name="picture_preview" nolabel="1" widget="html" readonly="1"/>
                             <field name="line_user_id" readonly="1"/>
-                            <field name="display_name" readonly="1"/>
-                            <field name="email" readonly="1"/>
-                            <field name="phone" readonly="1"/>
-                            <field name="birth_date" readonly="1"/>
-                            <field name="gender" readonly="1"/>
-                            <field name="is_email_verified" readonly="1"/>
-                            <field name="is_phone_verified" readonly="1"/>
+                            <field name="display_name"/>
+                            <field name="email"/>
+                            <field name="phone"/>
+                            <field name="birth_date"/>
+                            <field name="gender"/>
+                            <field name="is_email_verified"/>
+                            <field name="is_phone_verified"/>
                         </group>
                     </group>
 
                     <notebook>
                         <page string="Points">
                             <field name="point_ids" nolabel="1">
-                                <list editable="bottom">
+                                <list editable="bottom" delete="0">
                                     <field name="name"/>
                                     <field name="currency_id" domain="[('partner_id', '=', parent.partner_id)]"/>
                                     <field name="value"/>

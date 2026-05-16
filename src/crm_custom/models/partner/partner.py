@@ -10,6 +10,7 @@ class Inventory(models.Model):
     _name = "partner"
     _description = "Partner"
     _inherit = ["mail.thread", "mail.activity.mixin"]
+    _order = "create_date desc"
     _sql_constraints = [
         ("partner_slug_uniq", "unique(slug)", "Slug must be unique."),
     ]

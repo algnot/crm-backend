@@ -15,7 +15,7 @@ class CouponController(http.Controller):
             return partner_response["error"]
 
         now = fields.Datetime.now()
-        coupon = request.env["partner.coupon"].sudo().search([
+        coupons = request.env["partner.coupon"].sudo().search([
             ("partner_id", "=", partner_response["partner"].id),
             ("start_time", "<=", now),
             "|",
@@ -70,7 +70,7 @@ class CouponController(http.Controller):
         if user_response["error"]:
             return user_response["error"]
 
-        coupon = user_response["user"].coupon_ids.sorted(
+        coupons = user_response["user"].coupon_ids.sorted(
             key=lambda coupon: coupon.acquired_date,
             reverse=True,
         )

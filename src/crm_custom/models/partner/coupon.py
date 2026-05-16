@@ -97,7 +97,7 @@ class PartnerCoupon(models.Model):
         if self.currency_id.partner_id != self.partner_id:
             raise ValidationError("Coupon Currency อยู่นอกเหนือ Application นี้")
 
-        if self.value <= 0:
+        if self.value < 0:
             raise ValidationError("Value ต้องมากกว่า 0")
 
         if self.random_range <= 0:

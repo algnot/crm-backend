@@ -24,17 +24,21 @@ class Inventory(models.Model):
     description = fields.Text(string="Description", tracking=True)
 
     ui_background_color = fields.Char(string="Background Color", tracking=True)
+    ui_background_white_color = fields.Char(string="Background White Color", tracking=True)
     ui_primary_color = fields.Char(string="Primary Color", tracking=True)
     ui_secondary_color = fields.Char(string="Secondary Color", tracking=True)
-    ui_button_color = fields.Char(string="Button Color", tracking=True)
+
     ui_text_color = fields.Char(string="Text Color", tracking=True)
+    ui_text_white_color = fields.Char(string="Text White Color", tracking=True)
+    ui_text_gray_color = fields.Char(string="Text Gray Color", tracking=True)
+    ui_text_success_color = fields.Char(string="Text Success Color", tracking=True)
+    ui_text_error_color = fields.Char(string="Text Error Color", tracking=True)
+
+    ui_button_color = fields.Char(string="Button Color", tracking=True)
     ui_button_text_color = fields.Char(string="Button Text Color", tracking=True)
-    ui_success_color = fields.Char(string="Success Color", tracking=True)
-    ui_error_color = fields.Char(string="Error Color", tracking=True)
+
     ui_welcome_title = fields.Char(string="Welcome Title", tracking=True)
-    ui_welcome_message = fields.Text(string="Welcome Message", tracking=True)
-    ui_contact_email = fields.Char(string="Contact Email", tracking=True)
-    ui_contact_phone = fields.Char(string="Contact Phone", tracking=True)
+
     ui_crm_required_phone = fields.Boolean(string="Require Phone", default=False, tracking=True)
     ui_crm_required_email = fields.Boolean(string="Require Email", default=False, tracking=True)
     ui_custom_field_ids = fields.One2many(
@@ -92,14 +96,7 @@ class Inventory(models.Model):
 
         return partners
 
-    @api.constrains(
-        "ui_background_color",
-        "ui_button_color",
-        "ui_text_color",
-        "ui_button_text_color",
-        "ui_success_color",
-        "ui_error_color",
-    )
+    @api.constrains("ui_background_color", "ui_button_color", "ui_text_color", "ui_button_text_color",  "ui_success_color", "ui_error_color")
     def _check_hex_color_fields(self):
         color_field_names = [
             name

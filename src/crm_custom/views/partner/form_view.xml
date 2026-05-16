@@ -44,17 +44,20 @@
                           <page string="UI Config">
                             <group>
                                 <field name="ui_background_color"/>
+                                <field name="ui_background_white_color"/>
                                 <field name="ui_primary_color"/>
                                 <field name="ui_secondary_color"/>
-                                <field name="ui_button_color"/>
+
                                 <field name="ui_text_color"/>
+                                <field name="ui_text_white_color"/>
+                                <field name="ui_text_gray_color"/>
+                                <field name="ui_text_success_color"/>
+                                <field name="ui_text_error_color"/>
+
+                                <field name="ui_button_color"/>
                                 <field name="ui_button_text_color"/>
-                                <field name="ui_success_color"/>
-                                <field name="ui_error_color"/>
-                                <field name="ui_contact_email"/>
-                                <field name="ui_contact_phone"/>
+
                                 <field name="ui_welcome_title"/>
-                                <field name="ui_welcome_message"/>
                             </group>
                         </page>
                         <page string="UI Custom Fields">

@@ -86,7 +86,7 @@ class Inventory(models.Model):
         for record in self:
             frontend_path = os.getenv("BACKEND_PATH")
             if not record.slug:
-                record.picture_preview = False
+                record.liff_setup_url = False
                 continue
 
             record.liff_setup_url = f"{frontend_path}/{record.slug}"

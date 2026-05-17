@@ -84,7 +84,7 @@ class Inventory(models.Model):
     @api.depends("slug")
     def _compute_liff_setup_url(self):
         for record in self:
-            frontend_path = os.getenv("BACKEND_PATH")
+            frontend_path = os.getenv("FRONTEND_PATH")
             if not record.slug:
                 record.liff_setup_url = False
                 continue

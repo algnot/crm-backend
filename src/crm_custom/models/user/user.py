@@ -1,5 +1,4 @@
 from html import escape
-
 from odoo import api, fields, models
 
 

@@ -1,5 +1,5 @@
 import re
-
+import os
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
@@ -74,6 +74,22 @@ class Inventory(models.Model):
     )
 
     active = fields.Boolean(string="Active", default=True, tracking=True)
+
+    liff_setup_url = fields.Char(
+        string="LIFF Setup URL",
+        compute="_compute_liff_setup_url",
+        sanitize=False,
+    )
+
+    @api.depends("slug")
+    def _compute_liff_setup_url(self):
+        for record in self:
+            frontend_path = os.getenv("BACKEND_PATH")
+            if not record.slug:
+                record.picture_preview = False
+                continue
+
+            record.liff_setup_url = f"{frontend_path}/{record.slug}"
 
     def action_generate_redeem(self):
         self.ensure_one()

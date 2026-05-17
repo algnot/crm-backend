@@ -88,6 +88,30 @@ class CouponController(http.Controller):
             "coupon": [self._serialize_user_coupon(coupon) for coupon in coupons],
         })
 
+    @http.route("/api/partner/<string:slug>/user/<string:user_id>/coupon/<string:coupon_id>", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
+    def get_user_coupon_by_id(self, slug, user_id, coupon_id, **kwargs):
+        partner_response = self._get_partner(slug)
+        if partner_response["error"]:
+            return partner_response["error"]
+
+        user_response = self._get_user(partner_response["partner"], user_id)
+        if user_response["error"]:
+            return user_response["error"]
+
+        coupon = user_response["user"].coupon_ids.filtered(
+            lambda coupon: str(coupon.id) == coupon_id
+        )
+
+        if not coupon:
+            return json_response(
+                {"error": "coupon_not_found", "message": "ไม่พบคูปองดังกล่าว"},
+                status=404,
+            )
+
+        return json_response({
+            "coupon": self._serialize_user_coupon(coupon),
+        })
+
     @http.route("/api/partner/<string:slug>/user/<string:user_id>/coupon/<string:code>/use", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
     def use_user_coupon(self, slug, user_id, code, **kwargs):
         partner_response = self._get_partner(slug)

@@ -29,7 +29,7 @@
                     </group>
 
                     <group>
-                        <field name="liff_setup_url" readonly="1" invisible="active or liff_setup_url == '' or not liff_setup_url"/>
+                        <field name="liff_setup_url" readonly="1"/>
                     </group>
 
                     <group>

@@ -10,3 +10,6 @@ access_crm_user_coupon,access.crm.user.coupon,model_crm_user_coupon,,1,1,1,1
 access_crm_partner_point_redeem,access.crm.partner.point.redeem,model_crm_partner_point_redeem,,1,1,1,1
 access_crm_user_point_redeem_generate_wizard,access.crm.user.point.redeem.generate.wizard,model_crm_user_point_redeem_generate_wizard,,1,1,1,1
 access_partner_ads,access.partner.ads,model_partner_ads,,1,1,1,1
+access_partner_coupon_code,access.partner.coupon.code,model_partner_coupon_code,,1,1,1,1
+access_partner_coupon_create_wizard,access.partner.coupon.create.wizard,model_partner_coupon_create_wizard,,1,1,1,1
+access_partner_coupon_add_codes_wizard,access.partner.coupon.add.codes.wizard,model_partner_coupon_add_codes_wizard,,1,1,1,1

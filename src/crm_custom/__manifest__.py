@@ -1,6 +1,6 @@
 {
     "name": "CRM Custom Module",
-    "version": "1.0.3",
+    "version": "1.0.5",
     "summary": "CRM Custom Module",
     "author": "tk dev",
     "depends": ["base", "mail"],
@@ -15,6 +15,8 @@
         "views/partner/table_view.xml",
         "views/partner/form_view.xml",
         "views/partner/coupons_view.xml",
+        "views/partner/coupon_create_wizard_view.xml",
+        "views/partner/coupon_add_codes_wizard_view.xml",
         "views/partner/action_view.xml",
         "views/user/table_view.xml",
         "views/user/form_view.xml",

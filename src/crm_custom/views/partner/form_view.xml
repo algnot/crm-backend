@@ -109,10 +109,14 @@
                         </page>
                         <page string="Coupons">
                             <field name="coupon_ids" nolabel="1">
-                                <list delete="0">
+                                <list delete="0" create="0">
                                     <field name="name"/>
+                                    <field name="code_source"/>
                                     <field name="currency_id"/>
                                     <field name="value"/>
+                                    <field name="total_code_count"/>
+                                    <field name="available_code_count"/>
+                                    <field name="redeemed_count"/>
                                     <field name="start_time"/>
                                     <field name="end_time"/>
                                 </list>

@@ -117,8 +117,8 @@ class Inventory(models.Model):
         currency = self.currency_ids.filtered("is_default")[:1] or self.currency_ids[:1]
         return {
             "type": "ir.actions.act_window",
-            "name": "Generate Coupon",
-            "res_model": "partner.coupon",
+            "name": "Create Coupon",
+            "res_model": "partner.coupon.create.wizard",
             "view_mode": "form",
             "target": "new",
             "context": {

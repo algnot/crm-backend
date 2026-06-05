@@ -49,6 +49,12 @@ class UserCoupon(models.Model):
         readonly=True,
         ondelete="restrict",
     )
+    coupon_code_id = fields.Many2one(
+        "partner.coupon.code",
+        string="Coupon Code",
+        readonly=True,
+        ondelete="set null",
+    )
 
     def action_mark_used(self):
         now = fields.Datetime.now()
@@ -61,6 +67,12 @@ class UserCoupon(models.Model):
                 "is_used": True,
                 "used_date": now,
             })
+            if record.coupon_code_id:
+                record.coupon_code_id.write({
+                    "state": "used",
+                    "used_by_user_id": record.user_id.id,
+                    "used_date": now,
+                })
 
     @api.constrains("currency_id", "partner_id", "coupon_id", "user_id")
     def _check_partner_consistency(self):

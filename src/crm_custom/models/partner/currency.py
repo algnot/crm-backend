@@ -10,6 +10,7 @@ class PartnerPointCurrency(models.Model):
 
     name = fields.Char(string="Name", required=True)
     is_default = fields.Boolean(default=False)
+    is_total_spending = fields.Boolean(default=False)
 
     partner_id = fields.Many2one(
         "partner",

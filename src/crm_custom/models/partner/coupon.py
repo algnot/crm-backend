@@ -150,6 +150,53 @@ class PartnerCoupon(models.Model):
 
         return user_coupon
 
+    def grant_to_user(self, user, note):
+        self.ensure_one()
+        if not note or not note.strip():
+            raise ValidationError("กรุณาระบุหมายเหตุ")
+
+        if user.partner_id != self.partner_id:
+            raise ValidationError("ผู้ใช้อยู่นอกเหนือ Application นี้")
+
+        coupon_code = self.env["partner.coupon.code"].sudo().search(
+            [
+                ("coupon_id", "=", self.id),
+                ("state", "=", "available"),
+            ],
+            limit=1,
+            order="id",
+        )
+        if not coupon_code:
+            raise ValidationError("คูปองหมดแล้ว")
+
+        now = fields.Datetime.now()
+        expiration_date = False
+        if self.code_expiry_interval:
+            expiration_date = now + timedelta(minutes=self.code_expiry_interval)
+
+        user_coupon = self.env["crm.user.coupon"].sudo().create({
+            "name": self.name,
+            "admin_note": note.strip(),
+            "code": coupon_code.code,
+            "value": self.value,
+            "acquired_date": now,
+            "expiration_date": expiration_date,
+            "currency_id": self.currency_id.id,
+            "partner_id": self.partner_id.id,
+            "coupon_id": self.id,
+            "user_id": user.id,
+            "coupon_code_id": coupon_code.id,
+        })
+
+        coupon_code.write({
+            "state": "redeemed",
+            "user_coupon_id": user_coupon.id,
+            "redeemed_by_user_id": user.id,
+            "redeemed_date": now,
+        })
+
+        return user_coupon
+
     def action_export_codes(self):
         self.ensure_one()
 

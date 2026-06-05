@@ -1,4 +1,5 @@
 from html import escape
+
 from odoo import api, fields, models
 
 
@@ -53,6 +54,92 @@ class User(models.Model):
         "user_id",
         string="Coupons",
     )
+
+    point_balance_display = fields.Char(
+        string="Point Balance",
+        compute="_compute_user_summaries",
+    )
+    coupon_count = fields.Integer(
+        string="Coupons",
+        compute="_compute_user_summaries",
+    )
+    active_coupon_count = fields.Integer(
+        string="Active Coupons",
+        compute="_compute_user_summaries",
+    )
+    coupon_summary_display = fields.Char(
+        string="Coupon Codes",
+        compute="_compute_user_summaries",
+    )
+
+    @api.depends("point_ids", "point_ids.value", "point_ids.type", "point_ids.currency_id", "coupon_ids", "coupon_ids.is_used", "coupon_ids.code")
+    def _compute_user_summaries(self):
+        for record in self:
+            balance_parts = []
+            for currency in record.partner_id.currency_ids:
+                balance = record._get_currency_balance(currency)
+                balance_parts.append(f"{currency.name}: {balance:g}")
+
+            record.point_balance_display = ", ".join(balance_parts) if balance_parts else "-"
+            record.coupon_count = len(record.coupon_ids)
+            active_coupons = record.coupon_ids.filtered(lambda coupon: not coupon.is_used)
+            record.active_coupon_count = len(active_coupons)
+
+            coupon_codes = active_coupons.mapped("code")
+            if not coupon_codes:
+                record.coupon_summary_display = "-"
+            elif len(coupon_codes) <= 5:
+                record.coupon_summary_display = ", ".join(coupon_codes)
+            else:
+                preview = ", ".join(coupon_codes[:5])
+                record.coupon_summary_display = f"{preview} (+{len(coupon_codes) - 5})"
+
+    def _get_currency_balance(self, currency):
+        self.ensure_one()
+        points = self.point_ids.filtered(lambda point: point.currency_id == currency)
+        earn = sum(points.filtered(lambda point: point.type == "earn").mapped("value"))
+        transfer = sum(points.filtered(lambda point: point.type == "transfer").mapped("value"))
+        burn = sum(points.filtered(lambda point: point.type == "burn").mapped("value"))
+        return earn - transfer - burn
+
+    def action_open_user(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "User",
+            "res_model": "crm.user",
+            "res_id": self.id,
+            "view_mode": "form",
+            "target": "current",
+        }
+
+    def action_add_point(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Add Point",
+            "res_model": "crm.user.add.point.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_user_id": self.id,
+                "default_partner_id": self.partner_id.id,
+            },
+        }
+
+    def action_add_coupon(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Add Coupon",
+            "res_model": "crm.user.add.coupon.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_user_id": self.id,
+                "default_partner_id": self.partner_id.id,
+            },
+        }
 
     @api.depends("picture_url")
     def _compute_picture_preview(self):

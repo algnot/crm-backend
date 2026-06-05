@@ -87,11 +87,24 @@
                                 </list>
                             </field>
                         </page>
+                        <page string="Users">
+                            <field name="user_search" placeholder="ค้นหาชื่อ, LINE ID, email, เบอร์โทร..." nolabel="1" width="300"/>
+                            <field name="filtered_user_ids" nolabel="1">
+                                <list delete="0" create="0">
+                                    <field name="display_name"/>
+                                    <field name="line_user_id"/>
+                                    <button name="action_open_user" type="object" string="Open" icon="fa-external-link"/>
+                                    <button name="action_add_point" type="object" string="Add Point" icon="fa-plus"/>
+                                    <button name="action_add_coupon" type="object" string="Add Coupon" icon="fa-ticket"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="Currencies">
                             <field name="currency_ids" nolabel="1">
                                 <list editable="bottom" delete="0">
                                     <field name="name"/>
                                     <field name="is_default"/>
+                                    <field name="is_total_spending"/>
                                 </list>
                             </field>
                         </page>

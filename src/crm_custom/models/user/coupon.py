@@ -12,6 +12,7 @@ class UserCoupon(models.Model):
     ]
 
     name = fields.Char(string="Name", required=True, tracking=True)
+    admin_note = fields.Text(string="Admin Note", tracking=True)
     code = fields.Char(string="Code", required=True, readonly=True, copy=False, tracking=True)
     value = fields.Float(string="Value", required=True, readonly=True, tracking=True)
     acquired_date = fields.Datetime(string="Acquired Date", required=True, readonly=True, tracking=True)

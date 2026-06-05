@@ -56,6 +56,12 @@ class Inventory(models.Model):
         "partner_id",
         string="Users",
     )
+    user_search = fields.Char(string="Search Users")
+    filtered_user_ids = fields.Many2many(
+        "crm.user",
+        string="Filtered Users",
+        compute="_compute_filtered_user_ids",
+    )
 
     currency_ids = fields.One2many(
         "crm.partner.currency",
@@ -88,6 +94,20 @@ class Inventory(models.Model):
         compute="_compute_liff_setup_url",
         sanitize=False,
     )
+
+    @api.depends("user_ids", "user_search", "user_ids.display_name", "user_ids.line_user_id", "user_ids.email", "user_ids.phone")
+    def _compute_filtered_user_ids(self):
+        for partner in self:
+            users = partner.user_ids
+            search_term = (partner.user_search or "").strip().lower()
+            if search_term:
+                users = users.filtered(
+                    lambda user: search_term in (user.display_name or "").lower()
+                    or search_term in (user.line_user_id or "").lower()
+                    or search_term in (user.email or "").lower()
+                    or search_term in (user.phone or "").lower()
+                )
+            partner.filtered_user_ids = users
 
     @api.depends("slug")
     def _compute_liff_setup_url(self):
@@ -138,12 +158,14 @@ class Inventory(models.Model):
                     "name": "point",
                     "is_default": True,
                     "partner_id": partner.id,
+                    "is_total_spending": False,
                 })
 
                 self.env["crm.partner.currency"].create({
                     "name": "total spending",
                     "is_default": False,
                     "partner_id": partner.id,
+                    "is_total_spending": True,
                 })
 
         return partners

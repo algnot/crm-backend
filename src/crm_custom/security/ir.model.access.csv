@@ -13,3 +13,5 @@ access_partner_ads,access.partner.ads,model_partner_ads,,1,1,1,1
 access_partner_coupon_code,access.partner.coupon.code,model_partner_coupon_code,,1,1,1,1
 access_partner_coupon_create_wizard,access.partner.coupon.create.wizard,model_partner_coupon_create_wizard,,1,1,1,1
 access_partner_coupon_add_codes_wizard,access.partner.coupon.add.codes.wizard,model_partner_coupon_add_codes_wizard,,1,1,1,1
+access_crm_user_add_point_wizard,access.crm.user.add.point.wizard,model_crm_user_add_point_wizard,,1,1,1,1
+access_crm_user_add_coupon_wizard,access.crm.user.add.coupon.wizard,model_crm_user_add_coupon_wizard,,1,1,1,1

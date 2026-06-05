@@ -9,6 +9,7 @@ class UserPoint(models.Model):
     _order = "create_date desc"
 
     name = fields.Char(string="Name", required=True)
+    admin_note = fields.Text(string="Admin Note", tracking=True)
     value = fields.Float(string="Value", tracking=True, required=True)
     type = fields.Selection([
         ("earn", "Earn"),

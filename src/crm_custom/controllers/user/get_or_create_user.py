@@ -1,4 +1,6 @@
 import json
+import os
+
 from odoo import http
 from odoo.http import request
 from ....util.request import json_response
@@ -58,6 +60,7 @@ class GetOrCreateUserController(http.Controller):
             })
             user = request.env["crm.user"].sudo().browse(user.id)
 
+        user._update_tier()
         return json_response(self._serialize_user_response(user, partner))
 
 
@@ -75,4 +78,33 @@ class GetOrCreateUserController(http.Controller):
             "force_verify_email": force_verify_email,
             "birth_date": user.birth_date,
             "gender": user.gender,
+            "tier": self._serialize_user_tier(user.tier_id),
         }
+
+    def _serialize_user_tier(self, tier):
+        if not tier:
+            return False
+
+        return {
+            "code": tier.code,
+            "name": tier.name,
+            "min_spending": tier.min_spending,
+            "max_spending": tier.max_spending,
+            "color": tier.color,
+            "image_url": self._get_tier_icon_url(tier),
+        }
+
+    def _get_tier_icon_url(self, tier):
+        if not tier.icon:
+            return False
+
+        return self._get_image_url("partner.tier", tier.id, "icon")
+
+    def _get_image_url(self, model_name, record_id, field_name):
+        image_path = f"/web/image/{model_name}/{record_id}/{field_name}"
+        backend_path = os.getenv("BACKEND_PATH")
+
+        if backend_path:
+            return f"{backend_path.rstrip('/')}{image_path}"
+
+        return image_path

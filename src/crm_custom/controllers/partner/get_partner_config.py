@@ -29,7 +29,6 @@ class PartnerConfigController(http.Controller):
 
     def _serialize_partner_config(self, partner):
         return {
-            "id": partner.id,
             "name": partner.name,
             "slug": partner.slug,
             "description": partner.description,

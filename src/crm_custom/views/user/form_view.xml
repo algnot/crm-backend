@@ -26,6 +26,7 @@
                                 </h1>
                             </div>
                             <field name="partner_id" readonly="1"/>
+                            <field name="tier_id" readonly="1"/>
                             <field name="line_user_id" readonly="1"/>
                         </group>
                     </group>

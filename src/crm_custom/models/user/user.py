@@ -43,6 +43,13 @@ class User(models.Model):
         ondelete="cascade",
     )
 
+    tier_id = fields.Many2one(
+        "partner.tier",
+        string="Tier",
+        tracking=True,
+        domain="[('partner_id', '=', partner_id)]",
+    )
+
     point_ids = fields.One2many(
         "crm.user.point",
         "user_id",
@@ -101,6 +108,38 @@ class User(models.Model):
         transfer = sum(points.filtered(lambda point: point.type == "transfer").mapped("value"))
         burn = sum(points.filtered(lambda point: point.type == "burn").mapped("value"))
         return earn - transfer - burn
+
+    def _get_total_spending_currency(self):
+        self.ensure_one()
+        return self.partner_id.currency_ids.filtered("is_total_spending")[:1]
+
+    def _get_tier_for_spending(self, spending):
+        self.ensure_one()
+        return self.env["partner.tier"].search([
+            ("partner_id", "=", self.partner_id.id),
+            ("min_spending", "<=", spending),
+            ("max_spending", ">=", spending),
+        ], order="min_spending desc", limit=1)
+
+    def _get_total_spending_balance(self):
+        self.ensure_one()
+        spending_currency = self._get_total_spending_currency()
+        if not spending_currency:
+            return 0
+        return self._get_currency_balance(spending_currency)
+
+    def _update_tier(self):
+        for record in self:
+            spending = record._get_total_spending_balance()
+            tier = record._get_tier_for_spending(spending)
+            if record.tier_id != tier:
+                record.tier_id = tier
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        users = super().create(vals_list)
+        users._update_tier()
+        return users
 
     def action_open_user(self):
         self.ensure_one()

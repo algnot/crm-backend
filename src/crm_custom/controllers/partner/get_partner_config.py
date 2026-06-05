@@ -40,7 +40,25 @@ class PartnerConfigController(http.Controller):
             },
             "ui": self._serialize_ui_config(partner),
             "ads": self._serialize_active_ads(partner),
+            "tier": self._serialize_tier(partner),
         }
+
+    def _serialize_tier(self, partner):
+        result = []
+        tiers = partner.tier_ids
+
+        for tier in tiers:
+            tier_config = {
+                "code": tier.code,
+                "name": tier.name,
+                "min_spending": tier.min_spending,
+                "max_spending": tier.max_spending,
+                "color": tier.color,
+                "image_url": self._get_image_url("partner.tier", tier.id, "image"),
+            }
+            result.append(tier_config)
+
+        return result
 
     def _serialize_ui_config(self, partner):
         ui_config = {}

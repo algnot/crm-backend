@@ -81,6 +81,12 @@ class Inventory(models.Model):
         string="Coupons",
     )
 
+    tier_ids = fields.One2many(
+        "partner.tier",
+        "partner_id",
+        string="Tiers",
+    )
+
     ads_ids = fields.One2many(
         "partner.ads",
         "partner_id",
@@ -166,6 +172,15 @@ class Inventory(models.Model):
                     "is_default": False,
                     "partner_id": partner.id,
                     "is_total_spending": True,
+                })
+
+            if not partner.tier_ids:
+                self.env["partner.tier"].create({
+                    "name": "Member",
+                    "code": "member",
+                    "min_spending": 0,
+                    "max_spending": 999999999,
+                    "partner_id": partner.id,
                 })
 
         return partners

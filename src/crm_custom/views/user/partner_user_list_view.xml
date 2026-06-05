@@ -7,6 +7,7 @@
             <list delete="0" create="0">
                 <field name="display_name"/>
                 <field name="line_user_id"/>
+                <field name="tier_id"/>
                 <field name="point_balance_display"/>
                 <field name="coupon_count"/>
                 <field name="active_coupon_count"/>

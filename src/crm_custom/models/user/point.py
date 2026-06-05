@@ -47,3 +47,26 @@ class UserPoint(models.Model):
                 and record.currency_id.partner_id != record.user_id.partner_id
             ):
                 raise ValidationError("Point currency must belong to the user's partner.")
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        points = super().create(vals_list)
+        points._trigger_tier_update()
+        return points
+
+    def write(self, vals):
+        result = super().write(vals)
+        if any(field in vals for field in ("value", "type", "currency_id", "user_id")):
+            self._trigger_tier_update()
+        return result
+
+    def unlink(self):
+        users = self.mapped("user_id")
+        result = super().unlink()
+        users._update_tier()
+        return result
+
+    def _trigger_tier_update(self):
+        spending_points = self.filtered(lambda point: point.currency_id.is_total_spending)
+        if spending_points:
+            spending_points.mapped("user_id")._update_tier()

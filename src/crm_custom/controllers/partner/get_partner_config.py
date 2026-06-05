@@ -56,6 +56,9 @@ class PartnerConfigController(http.Controller):
                 value = self._serialize_custom_fields(value)
                 key = "ui_custom_fields"
 
+            if value and field_name == "ui_banner":
+                value = self._get_image_url("partner", partner.id, field_name)
+
             ui_config[key] = value
 
         return ui_config

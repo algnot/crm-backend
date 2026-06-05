@@ -1,6 +1,6 @@
 import os
 
-from odoo import http
+from odoo import fields, http
 from odoo.http import request
 from ....util.request import json_response
 
@@ -39,6 +39,7 @@ class PartnerConfigController(http.Controller):
                 "liff_id": partner.partner_line_liff_id,
             },
             "ui": self._serialize_ui_config(partner),
+            "ads": self._serialize_active_ads(partner),
         }
 
     def _serialize_ui_config(self, partner):
@@ -68,14 +69,43 @@ class PartnerConfigController(http.Controller):
             for custom_field in custom_fields
         ]
 
+    def _serialize_active_ads(self, partner):
+        now = fields.Datetime.now()
+        ads = request.env["partner.ads"].sudo().search([
+            ("partner_id", "=", partner.id),
+            ("active", "=", True),
+            ("start_date", "<=", now),
+            ("end_date", ">=", now),
+        ])
+
+        return [self._serialize_ad(ad) for ad in ads]
+
+    def _serialize_ad(self, ad):
+        return {
+            "id": ad.id,
+            "action": ad.action,
+            "image_url": self._get_ad_image_url(ad),
+            "start_date": fields.Datetime.to_string(ad.start_date),
+            "end_date": fields.Datetime.to_string(ad.end_date),
+        }
+
+    def _get_image_url(self, model_name, record_id, field_name):
+        image_path = f"/web/image/{model_name}/{record_id}/{field_name}"
+        backend_path = os.getenv("BACKEND_PATH")
+
+        if backend_path:
+            return f"{backend_path.rstrip('/')}{image_path}"
+
+        return image_path
+
     def _get_logo_url(self, partner):
         if not partner.logo:
             return False
 
-        logo_path = f"/web/image/partner/{partner.id}/logo"
-        backend_path = os.getenv("BACKEND_PATH")
+        return self._get_image_url("partner", partner.id, "logo")
 
-        if backend_path:
-            return f"{backend_path.rstrip('/')}{logo_path}"
+    def _get_ad_image_url(self, ad):
+        if not ad.image:
+            return False
 
-        return logo_path
+        return self._get_image_url("partner.ads", ad.id, "image")

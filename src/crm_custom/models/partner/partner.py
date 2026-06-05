@@ -24,10 +24,12 @@ class Inventory(models.Model):
 
     description = fields.Text(string="Description", tracking=True)
 
+    ui_banner = fields.Image(string="Banner", max_width=1920, max_height=1920)
     ui_background_color = fields.Char(string="Background Color", tracking=True)
     ui_background_white_color = fields.Char(string="Background White Color", tracking=True)
     ui_primary_color = fields.Char(string="Primary Color", tracking=True)
     ui_secondary_color = fields.Char(string="Secondary Color", tracking=True)
+    ui_surface_color = fields.Char(string="Surface Color", tracking=True)
 
     ui_text_color = fields.Char(string="Text Color", tracking=True)
     ui_text_white_color = fields.Char(string="Text White Color", tracking=True)
@@ -71,6 +73,12 @@ class Inventory(models.Model):
         "partner.coupon",
         "partner_id",
         string="Coupons",
+    )
+
+    ads_ids = fields.One2many(
+        "partner.ads",
+        "partner_id",
+        string="Ads",
     )
 
     active = fields.Boolean(string="Active", default=True, tracking=True)
@@ -129,6 +137,12 @@ class Inventory(models.Model):
                 self.env["crm.partner.currency"].create({
                     "name": "point",
                     "is_default": True,
+                    "partner_id": partner.id,
+                })
+
+                self.env["crm.partner.currency"].create({
+                    "name": "total spending",
+                    "is_default": False,
                     "partner_id": partner.id,
                 })
 

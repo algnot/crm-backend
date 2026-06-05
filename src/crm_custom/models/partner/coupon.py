@@ -21,7 +21,7 @@ class PartnerCoupon(models.Model):
     start_time = fields.Datetime(string="Start Date", default=fields.Datetime.now, required=True, tracking=True)
     term_and_condition = fields.Text(string="Term and Condition", tracking=True)
     code_expiry_interval = fields.Integer(
-        string="Expiry Interval (Hours)",
+        string="Expiry Interval (Minutes)",
         default=24,
         tracking=True,
     )
@@ -63,7 +63,7 @@ class PartnerCoupon(models.Model):
         now = fields.Datetime.now()
         expiration_date = False
         if self.code_expiry_interval:
-            expiration_date = now + timedelta(hours=self.code_expiry_interval)
+            expiration_date = now + timedelta(minutes=self.code_expiry_interval)
 
         point = self.env["crm.user.point"].sudo().create({
             "name": f"Redeem coupon: {self.name}",

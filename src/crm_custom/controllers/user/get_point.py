@@ -120,6 +120,7 @@ class GetPointController(http.Controller):
                     "id": point.currency_id.id,
                     "name": point.currency_id.name,
                     "is_default": point.currency_id.is_default,
+                    "is_total_spending": point.currency_id.is_total_spending,
                 },
             }
             for point in points

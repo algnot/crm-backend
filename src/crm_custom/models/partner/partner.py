@@ -97,6 +97,13 @@ class Inventory(models.Model):
         string="Receipt Redeems",
     )
 
+    portal_user_ids = fields.One2many(
+        "res.users",
+        "crm_partner_id",
+        string="Portal Users",
+        domain=[("is_partner_portal", "=", True)],
+    )
+
     coupon_ids = fields.One2many(
         "partner.coupon",
         "partner_id",
@@ -198,6 +205,19 @@ class Inventory(models.Model):
             "context": {
                 "default_partner_id": self.id,
                 "default_currency_id": currency.id,
+            },
+        }
+
+    def action_add_portal_user(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Add Portal User",
+            "res_model": "partner.portal.user.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_partner_id": self.id,
             },
         }
 

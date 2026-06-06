@@ -1,6 +1,6 @@
 {
     "name": "CRM Custom Module",
-    "version": "1.0.17",
+    "version": "1.0.18",
     "summary": "CRM Custom Module",
     "author": "tk dev",
     "depends": ["base", "mail"],
@@ -11,6 +11,7 @@
         "web.assets_backend": [],
     },
     "data": [
+        "security/partner_portal_groups.xml",
         "security/ir.model.access.csv",
         "views/partner/table_view.xml",
         "views/partner/form_view.xml",
@@ -18,6 +19,7 @@
         "views/partner/coupon_create_wizard_view.xml",
         "views/partner/coupon_add_codes_wizard_view.xml",
         "views/partner/receipt_redeem_view.xml",
+        "views/partner/portal_user_wizard_view.xml",
         "views/partner/action_view.xml",
         "views/user/table_view.xml",
         "views/user/search_view.xml",

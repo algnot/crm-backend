@@ -1,11 +1,11 @@
 {
     "name": "CRM Custom Module",
-    "version": "1.0.8",
+    "version": "1.0.10",
     "summary": "CRM Custom Module",
     "author": "tk dev",
     "depends": ["base", "mail"],
     "external_dependencies": {
-        "python": ["Pillow", "python-barcode"],
+        "python": ["Pillow", "python-barcode", "boto3"],
     },
     "assets": {
         "web.assets_backend": [],

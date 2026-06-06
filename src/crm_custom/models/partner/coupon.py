@@ -14,11 +14,19 @@ MAX_CODE_BATCH_SIZE = 2000
 class PartnerCoupon(models.Model):
     _name = "partner.coupon"
     _description = "Partner Coupon"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["s3.image.mixin", "mail.thread", "mail.activity.mixin"]
     _order = "create_date desc"
 
     name = fields.Char(string="Name", required=True, tracking=True)
-    image = fields.Image(string="Image", max_width=1000, max_height=1000)
+    image = fields.Char(string="Image", tracking=True)
+    image_file = fields.Image(
+        string="Image",
+        max_width=1000,
+        max_height=1000,
+        store=False,
+        compute="_compute_image_file",
+        inverse="_inverse_image_file",
+    )
     code_source = fields.Selection(
         [
             ("generate", "Generate"),
@@ -88,6 +96,21 @@ class PartnerCoupon(models.Model):
         "coupon_id",
         string="User Coupons",
     )
+
+    def _get_s3_image_config(self):
+        return {
+            "image": {
+                "max_width": 1000,
+                "max_height": 1000,
+            },
+        }
+
+    @api.depends("image")
+    def _compute_image_file(self):
+        self._compute_s3_image_file("image")
+
+    def _inverse_image_file(self):
+        self._inverse_s3_image_file("image")
 
     @api.depends("coupon_code_ids", "coupon_code_ids.state")
     def _compute_code_counts(self):

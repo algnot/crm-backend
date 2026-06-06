@@ -14,7 +14,8 @@
                         <field name="code_source"/>
                     </group>
                     <group>
-                        <field name="image" widget="image" options="{'size': [128, 128]}"/>
+                        <field name="image_file" widget="image" string="Image" options="{'size': [128, 128]}"/>
+                        <field name="image" invisible="1"/>
                     </group>
                 </group>
                 <group>

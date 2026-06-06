@@ -1,5 +1,4 @@
 import json
-import os
 
 from odoo import http
 from odoo.http import request
@@ -91,20 +90,5 @@ class GetOrCreateUserController(http.Controller):
             "min_spending": tier.min_spending,
             "max_spending": tier.max_spending,
             "color": tier.color,
-            "image_url": self._get_tier_icon_url(tier),
+            "image_url": tier.icon or False,
         }
-
-    def _get_tier_icon_url(self, tier):
-        if not tier.icon:
-            return False
-
-        return self._get_image_url("partner.tier", tier.id, "icon")
-
-    def _get_image_url(self, model_name, record_id, field_name):
-        image_path = f"/web/image/{model_name}/{record_id}/{field_name}"
-        backend_path = os.getenv("BACKEND_PATH")
-
-        if backend_path:
-            return f"{backend_path.rstrip('/')}{image_path}"
-
-        return image_path

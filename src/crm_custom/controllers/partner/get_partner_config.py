@@ -1,5 +1,3 @@
-import os
-
 from odoo import fields, http
 from odoo.http import request
 from ....util.request import json_response
@@ -33,7 +31,7 @@ class PartnerConfigController(http.Controller):
             "slug": partner.slug,
             "description": partner.description,
             "active": partner.active,
-            "logo_url": self._get_logo_url(partner),
+            "logo_url": partner.logo or False,
             "line": {
                 "liff_id": partner.partner_line_liff_id,
             },
@@ -53,7 +51,7 @@ class PartnerConfigController(http.Controller):
                 "min_spending": tier.min_spending,
                 "max_spending": tier.max_spending,
                 "color": tier.color,
-                "image_url": self._get_image_url("partner.tier", tier.id, "image"),
+                "image_url": tier.icon or False,
             }
             result.append(tier_config)
 
@@ -73,10 +71,7 @@ class PartnerConfigController(http.Controller):
                 value = self._serialize_custom_fields(value)
                 key = "ui_custom_fields"
 
-            if value and field_name == "ui_banner":
-                value = self._get_image_url("partner", partner.id, field_name)
-
-            ui_config[key] = value
+            ui_config[key] = value or False
 
         return ui_config
 
@@ -104,28 +99,7 @@ class PartnerConfigController(http.Controller):
         return {
             "id": ad.id,
             "action": ad.action,
-            "image_url": self._get_ad_image_url(ad),
+            "image_url": ad.image or False,
             "start_date": fields.Datetime.to_string(ad.start_date),
             "end_date": fields.Datetime.to_string(ad.end_date),
         }
-
-    def _get_image_url(self, model_name, record_id, field_name):
-        image_path = f"/web/image/{model_name}/{record_id}/{field_name}"
-        backend_path = os.getenv("BACKEND_PATH")
-
-        if backend_path:
-            return f"{backend_path.rstrip('/')}{image_path}"
-
-        return image_path
-
-    def _get_logo_url(self, partner):
-        if not partner.logo:
-            return False
-
-        return self._get_image_url("partner", partner.id, "logo")
-
-    def _get_ad_image_url(self, ad):
-        if not ad.image:
-            return False
-
-        return self._get_image_url("partner.ads", ad.id, "image")

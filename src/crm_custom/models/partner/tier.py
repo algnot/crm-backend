@@ -5,6 +5,7 @@ from odoo.exceptions import ValidationError
 class PartnerTier(models.Model):
     _name = "partner.tier"
     _description = "Partner Tier"
+    _inherit = ["s3.image.mixin"]
     _order = "min_spending asc, id asc"
     _sql_constraints = [
         (
@@ -17,7 +18,15 @@ class PartnerTier(models.Model):
     name = fields.Char(string="Name", required=True)
     code = fields.Char(string="Code", required=True)
     color = fields.Char(string="Color")
-    icon = fields.Image(string="Logo", max_width=500, max_height=500)
+    icon = fields.Char(string="Logo")
+    icon_file = fields.Image(
+        string="Logo",
+        max_width=500,
+        max_height=500,
+        store=False,
+        compute="_compute_icon_file",
+        inverse="_inverse_icon_file",
+    )
 
     convert_points = fields.Float(string="Convert Points", required=True, default=0)
     min_spending = fields.Float(string="Minimum Spending", required=True)
@@ -30,6 +39,21 @@ class PartnerTier(models.Model):
         required=True,
         ondelete="cascade",
     )
+
+    def _get_s3_image_config(self):
+        return {
+            "icon": {
+                "max_width": 500,
+                "max_height": 500,
+            },
+        }
+
+    @api.depends("icon")
+    def _compute_icon_file(self):
+        self._compute_s3_image_file("icon")
+
+    def _inverse_icon_file(self):
+        self._inverse_s3_image_file("icon")
 
     @api.constrains("min_spending", "max_spending")
     def _check_spending_range(self):

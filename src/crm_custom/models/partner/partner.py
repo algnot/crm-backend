@@ -9,7 +9,7 @@ HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 class Inventory(models.Model):
     _name = "partner"
     _description = "Partner"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["s3.image.mixin", "mail.thread", "mail.activity.mixin"]
     _order = "create_date desc"
     _sql_constraints = [
         ("partner_slug_uniq", "unique(slug)", "Slug must be unique."),
@@ -17,14 +17,30 @@ class Inventory(models.Model):
 
     name = fields.Char(string="Name", tracking=True, required=True)
     slug = fields.Char(string="Slug", tracking=True, required=True)
-    logo = fields.Image(string="Logo", max_width=1920, max_height=1920)
+    logo = fields.Char(string="Logo", tracking=True)
+    logo_file = fields.Image(
+        string="Logo",
+        max_width=1920,
+        max_height=1920,
+        store=False,
+        compute="_compute_logo_file",
+        inverse="_inverse_logo_file",
+    )
 
     partner_line_liff_id = fields.Char(string="LIFF ID", tracking=True)
     partner_line_channel_access_token = fields.Char(string="Channel Access Token", password="True" ,tracking=True)
 
     description = fields.Text(string="Description", tracking=True)
 
-    ui_banner = fields.Image(string="Banner", max_width=1920, max_height=1920)
+    ui_banner = fields.Char(string="Banner", tracking=True)
+    ui_banner_file = fields.Image(
+        string="Banner",
+        max_width=1920,
+        max_height=1920,
+        store=False,
+        compute="_compute_ui_banner_file",
+        inverse="_inverse_ui_banner_file",
+    )
     ui_background_color = fields.Char(string="Background Color", tracking=True)
     ui_background_white_color = fields.Char(string="Background White Color", tracking=True)
     ui_primary_color = fields.Char(string="Primary Color", tracking=True)
@@ -100,6 +116,32 @@ class Inventory(models.Model):
         compute="_compute_liff_setup_url",
         sanitize=False,
     )
+
+    def _get_s3_image_config(self):
+        return {
+            "logo": {
+                "max_width": 1920,
+                "max_height": 1920,
+            },
+            "ui_banner": {
+                "max_width": 1920,
+                "max_height": 1920,
+            },
+        }
+
+    @api.depends("logo")
+    def _compute_logo_file(self):
+        self._compute_s3_image_file("logo")
+
+    def _inverse_logo_file(self):
+        self._inverse_s3_image_file("logo")
+
+    @api.depends("ui_banner")
+    def _compute_ui_banner_file(self):
+        self._compute_s3_image_file("ui_banner")
+
+    def _inverse_ui_banner_file(self):
+        self._inverse_s3_image_file("ui_banner")
 
     @api.depends("user_ids", "user_search", "user_ids.display_name", "user_ids.line_user_id", "user_ids.email", "user_ids.phone")
     def _compute_filtered_user_ids(self):

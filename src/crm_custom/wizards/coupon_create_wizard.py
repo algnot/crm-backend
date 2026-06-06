@@ -7,6 +7,7 @@ from ..models.partner.coupon import MAX_CODE_BATCH_SIZE
 class PartnerCouponCreateWizard(models.TransientModel):
     _name = "partner.coupon.create.wizard"
     _description = "Create Partner Coupon"
+    _inherit = ["s3.image.mixin"]
 
     partner_id = fields.Many2one(
         "partner",
@@ -21,7 +22,13 @@ class PartnerCouponCreateWizard(models.TransientModel):
         required=True,
     )
     value = fields.Float(string="Value", required=True, default=0)
-    image = fields.Image(string="Image", max_width=1000, max_height=1000)
+    image = fields.Char(string="Image")
+    image_file = fields.Image(
+        string="Image",
+        max_width=1000,
+        max_height=1000,
+        store=False,
+    )
     term_and_condition = fields.Text(string="Term and Condition")
     start_time = fields.Datetime(
         string="Start Date",
@@ -53,6 +60,14 @@ class PartnerCouponCreateWizard(models.TransientModel):
     import_file = fields.Binary(string="CSV File")
     import_filename = fields.Char(string="CSV Filename")
 
+    def _get_s3_image_config(self):
+        return {
+            "image": {
+                "max_width": 1000,
+                "max_height": 1000,
+            },
+        }
+
     @api.model
     def default_get(self, fields_list):
         values = super().default_get(fields_list)
@@ -82,7 +97,7 @@ class PartnerCouponCreateWizard(models.TransientModel):
             "name": self.name,
             "currency_id": self.currency_id.id,
             "value": self.value,
-            "image": self.image,
+            "image": self._upload_image_field("image", self.image_file),
             "term_and_condition": self.term_and_condition,
             "start_time": self.start_time,
             "code_expiry_interval": self.code_expiry_interval,

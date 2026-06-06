@@ -91,6 +91,12 @@ class Inventory(models.Model):
         string="Point Redeems",
     )
 
+    receipt_redeem_ids = fields.One2many(
+        "crm.partner.receipt.redeem",
+        "partner_id",
+        string="Receipt Redeems",
+    )
+
     coupon_ids = fields.One2many(
         "partner.coupon",
         "partner_id",
@@ -195,6 +201,22 @@ class Inventory(models.Model):
             },
         }
 
+    def action_open_receipt_redeems(self):
+        self.ensure_one()
+        action = self.env["ir.actions.act_window"]._for_xml_id(
+            "crm_custom.action_crm_partner_receipt_redeem"
+        )
+        action.update({
+            "name": f"Receipt Redeem - {self.name}",
+            "domain": [("partner_id", "=", self.id)],
+            "context": {
+                "default_partner_id": self.id,
+                "search_default_filter_pending": 1,
+            },
+            "target": "current",
+        })
+        return action
+
     @api.model_create_multi
     def create(self, vals_list):
         partners = super().create(vals_list)
@@ -222,6 +244,7 @@ class Inventory(models.Model):
                     "code": "member",
                     "min_spending": 0,
                     "max_spending": 999999999,
+                    "convert_points": 25,
                     "partner_id": partner.id,
                 })
 

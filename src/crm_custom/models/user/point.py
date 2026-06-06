@@ -38,6 +38,11 @@ class UserPoint(models.Model):
         string="Redeem",
     )
 
+    receipt_redeem_id = fields.Many2one(
+        "crm.partner.receipt.redeem",
+        string="Receipt Redeem",
+    )
+
     @api.constrains("currency_id", "user_id")
     def _check_currency_partner(self):
         for record in self:

@@ -28,7 +28,7 @@ class PartnerTier(models.Model):
         inverse="_inverse_icon_file",
     )
 
-    convert_points = fields.Float(string="Convert Points", required=True, default=0)
+    convert_points = fields.Float(string="Convert Points", required=True, default=25)
     min_spending = fields.Float(string="Minimum Spending", required=True)
     max_spending = fields.Float(string="Maximum Spending", required=True)
     is_show_in_ui = fields.Boolean(string="Show In UI", default=True)

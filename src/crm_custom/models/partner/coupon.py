@@ -50,7 +50,7 @@ class PartnerCoupon(models.Model):
     term_and_condition = fields.Text(string="Term and Condition", tracking=True)
     code_expiry_interval = fields.Integer(
         string="Expiry Interval (Minutes)",
-        default=24,
+        default=15,
         tracking=True,
     )
     end_time = fields.Datetime(string="End Date", tracking=True)

@@ -37,7 +37,7 @@ class PartnerCouponCreateWizard(models.TransientModel):
     )
     code_expiry_interval = fields.Integer(
         string="Expiry Interval (Minutes)",
-        default=24,
+        default=15,
     )
     end_time = fields.Datetime(string="End Date")
     code_source = fields.Selection(

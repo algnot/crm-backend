@@ -49,6 +49,7 @@ class RedeemPointController(http.Controller):
         try:
             point = redeem_response["redeem"].sudo().redeem_for_user(user)
         except ValidationError as error:
+            request.env.cr.rollback()
             return json_response(
                 {"error": "redeem_not_allowed", "message": str(error)},
                 status=400,

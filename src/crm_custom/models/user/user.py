@@ -1,6 +1,7 @@
 from html import escape
 
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class User(models.Model):
@@ -146,6 +147,26 @@ class User(models.Model):
         users = super().create(vals_list)
         users._update_tier()
         return users
+
+    def adjust_point(self, value, point_type, currency, note, expiration_date=None):
+        self.ensure_one()
+        if not note or not note.strip():
+            raise ValidationError("กรุณาระบุหมายเหตุ")
+        if value <= 0:
+            raise ValidationError("Value ต้องมากกว่า 0")
+        if currency.partner_id != self.partner_id:
+            raise ValidationError("Point currency must belong to this partner.")
+
+        return self.env["crm.user.point"].create({
+            "name": f"Admin: {self.display_name}",
+            "admin_note": note.strip(),
+            "value": value,
+            "type": point_type,
+            "given_date": fields.Datetime.now(),
+            "expiration_date": expiration_date,
+            "currency_id": currency.id,
+            "user_id": self.id,
+        })
 
     def action_open_user(self):
         self.ensure_one()

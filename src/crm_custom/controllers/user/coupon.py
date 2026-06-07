@@ -61,6 +61,7 @@ class CouponController(http.Controller):
         try:
             user_coupon = coupon_response["coupon"].sudo().redeem_for_user(user_response["user"])
         except ValidationError as error:
+            request.env.cr.rollback()
             return json_response(
                 {"error": "coupon_not_allowed", "message": str(error)},
                 status=400,
@@ -136,6 +137,7 @@ class CouponController(http.Controller):
         try:
             user_coupon.action_mark_used()
         except ValidationError as error:
+            request.env.cr.rollback()
             return json_response(
                 {"error": "coupon_not_allowed", "message": str(error)},
                 status=400,

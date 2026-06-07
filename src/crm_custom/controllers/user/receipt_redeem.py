@@ -27,6 +27,7 @@ class ReceiptRedeemController(http.Controller):
                 image_data,
             )
         except ValidationError as error:
+            request.env.cr.rollback()
             return json_response(
                 {"error": "receipt_not_allowed", "message": str(error)},
                 status=400,

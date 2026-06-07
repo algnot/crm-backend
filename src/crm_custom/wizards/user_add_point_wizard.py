@@ -1,5 +1,4 @@
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
 
 
 class UserAddPointWizard(models.TransientModel):
@@ -50,22 +49,12 @@ class UserAddPointWizard(models.TransientModel):
 
     def action_add_point(self):
         self.ensure_one()
-        if not self.note or not self.note.strip():
-            raise ValidationError("กรุณาระบุหมายเหตุ")
-        if self.value <= 0:
-            raise ValidationError("Value ต้องมากกว่า 0")
-        if self.currency_id.partner_id != self.partner_id:
-            raise ValidationError("Point currency must belong to this partner.")
-
-        self.env["crm.user.point"].create({
-            "name": f"Admin: {self.user_id.display_name}",
-            "admin_note": self.note.strip(),
-            "value": self.value,
-            "type": self.type,
-            "given_date": fields.Datetime.now(),
-            "expiration_date": self.expiration_date,
-            "currency_id": self.currency_id.id,
-            "user_id": self.user_id.id,
-        })
+        self.user_id.adjust_point(
+            self.value,
+            self.type,
+            self.currency_id,
+            self.note,
+            self.expiration_date,
+        )
 
         return {"type": "ir.actions.act_window_close"}

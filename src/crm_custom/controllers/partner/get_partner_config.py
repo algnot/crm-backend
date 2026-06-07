@@ -61,7 +61,7 @@ class PartnerConfigController(http.Controller):
         ui_config = {}
 
         for field_name, field in partner._fields.items():
-            if not field_name.startswith("ui_"):
+            if not field_name.startswith("ui_") or field_name == "ui_banner_file":
                 continue
 
             value = partner[field_name]
@@ -100,6 +100,7 @@ class PartnerConfigController(http.Controller):
             "id": ad.id,
             "action": ad.action,
             "image_url": ad.image or False,
+            "message": ad.message,
             "start_date": fields.Datetime.to_string(ad.start_date),
             "end_date": fields.Datetime.to_string(ad.end_date),
         }

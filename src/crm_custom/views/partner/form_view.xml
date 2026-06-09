@@ -96,6 +96,7 @@
                                 <list editable="bottom">
                                     <field name="image_file" widget="image" string="Image" options="{'size': [64, 64]}"/>
                                     <field name="image" column_invisible="1"/>
+                                    <field name="title"/>
                                     <field name="message"/>
                                     <field name="action"/>
                                     <field name="start_date"/>

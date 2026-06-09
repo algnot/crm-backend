@@ -116,17 +116,32 @@ class User(models.Model):
 
     def _get_tier_for_spending(self, spending):
         self.ensure_one()
-        tier = self.env["partner.tier"].search([
-            ("partner_id", "=", self.partner_id.id),
-            ("min_spending", "<=", spending),
-            ("max_spending", ">=", spending),
-        ], order="min_spending desc", limit=1)
+        partner_tier_domain = [("partner_id", "=", self.partner_id.id)]
+
+        tier = self.env["partner.tier"].search(
+            partner_tier_domain + [
+                ("min_spending", "<=", spending),
+                ("max_spending", ">=", spending),
+            ],
+            order="min_spending desc",
+            limit=1,
+        )
         if tier:
             return tier
 
-        return self.env["partner.tier"].search([
-            ("partner_id", "=", self.partner_id.id),
-        ], order="min_spending asc", limit=1)
+        highest_tier = self.env["partner.tier"].search(
+            partner_tier_domain,
+            order="max_spending desc, min_spending desc",
+            limit=1,
+        )
+        if highest_tier and spending > highest_tier.max_spending:
+            return highest_tier
+
+        return self.env["partner.tier"].search(
+            partner_tier_domain,
+            order="min_spending asc",
+            limit=1,
+        )
 
     def _get_total_spending_balance(self):
         self.ensure_one()

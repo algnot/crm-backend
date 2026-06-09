@@ -98,6 +98,7 @@ class PartnerConfigController(http.Controller):
     def _serialize_ad(self, ad):
         return {
             "id": ad.id,
+            "title": ad.title,
             "action": ad.action,
             "image_url": ad.image or False,
             "message": ad.message,

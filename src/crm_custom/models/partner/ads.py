@@ -1,5 +1,8 @@
 import re
+from urllib.parse import urlparse
+
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
@@ -9,6 +12,7 @@ class PartnerAds(models.Model):
     _description = "Partner Ads"
     _inherit = ["s3.image.mixin"]
 
+    title = fields.Text(string="Title")
     action = fields.Char(string="Action")
     message = fields.Text(string="Message")
     image = fields.Char(string="Image")
@@ -45,3 +49,14 @@ class PartnerAds(models.Model):
 
     def _inverse_image_file(self):
         self._inverse_s3_image_file("image")
+
+    @api.constrains("action")
+    def _check_action_url(self):
+        for record in self:
+            action = record.action
+            if not action:
+                continue
+
+            parsed = urlparse(action)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                raise ValidationError("Action must be a valid URL.")

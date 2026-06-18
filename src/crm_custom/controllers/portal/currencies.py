@@ -1,19 +1,16 @@
 from odoo import http
 from odoo.http import request
 
-from ....util.portal_auth import get_portal_user_from_request
+from ....util.portal_auth import get_portal_admin_from_request
 from ....util.request import json_response
 
 
 class PortalCurrenciesController(http.Controller):
     @http.route("/api/portal/currencies", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def list_currencies(self, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         currencies = request.env["crm.partner.currency"].sudo().search([
             ("partner_id", "=", user.crm_partner_id.id),
@@ -28,12 +25,9 @@ class PortalCurrenciesController(http.Controller):
 
     @http.route("/api/portal/currencies/<int:currency_id>", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def get_currency(self, currency_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         currency_response = self._get_currency(user.crm_partner_id, currency_id)
         if currency_response["error"]:

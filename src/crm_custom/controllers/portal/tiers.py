@@ -5,7 +5,7 @@ from odoo.exceptions import ValidationError
 from odoo.http import request
 from psycopg2 import IntegrityError
 
-from ....util.portal_auth import get_portal_user_from_request
+from ....util.portal_auth import get_portal_admin_from_request
 from ....util.request import json_response
 
 ALLOWED_TIER_FIELDS = (
@@ -31,12 +31,9 @@ ALLOWED_REWARD_FIELDS = (
 class PortalTiersController(http.Controller):
     @http.route("/api/portal/tiers", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def list_tiers(self, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
         tiers = request.env["partner.tier"].sudo().search([
@@ -53,12 +50,9 @@ class PortalTiersController(http.Controller):
 
     @http.route("/api/portal/tiers/join-rewards", type="http", auth="public", methods=["PUT"], csrf=False, cors="*")
     def update_join_rewards(self, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
         payload, parse_error = self._parse_payload()
@@ -93,12 +87,9 @@ class PortalTiersController(http.Controller):
 
     @http.route("/api/portal/tiers/join-rewards", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def get_join_rewards(self, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
         return json_response({
@@ -110,12 +101,9 @@ class PortalTiersController(http.Controller):
 
     @http.route("/api/portal/tiers/<int:tier_id>/rewards", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def get_tier_rewards(self, tier_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         tier_response = self._get_tier(user.crm_partner_id, tier_id)
         if tier_response["error"]:
@@ -136,12 +124,9 @@ class PortalTiersController(http.Controller):
 
     @http.route("/api/portal/tiers/<int:tier_id>/rewards", type="http", auth="public", methods=["PUT"], csrf=False, cors="*")
     def update_tier_rewards(self, tier_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
         tier_response = self._get_tier(partner, tier_id)
@@ -188,12 +173,9 @@ class PortalTiersController(http.Controller):
 
     @http.route("/api/portal/tiers/<int:tier_id>", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def get_tier(self, tier_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         tier_response = self._get_tier(user.crm_partner_id, tier_id)
         if tier_response["error"]:
@@ -205,12 +187,9 @@ class PortalTiersController(http.Controller):
 
     @http.route("/api/portal/tiers", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
     def create_tier(self, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
         payload, parse_error = self._parse_payload()
@@ -252,12 +231,9 @@ class PortalTiersController(http.Controller):
 
     @http.route("/api/portal/tiers/<int:tier_id>", type="http", auth="public", methods=["PUT"], csrf=False, cors="*")
     def update_tier(self, tier_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
         tier_response = self._get_tier(partner, tier_id)

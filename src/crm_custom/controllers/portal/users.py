@@ -4,19 +4,16 @@ from odoo import fields, http
 from odoo.exceptions import ValidationError
 from odoo.http import request
 
-from ....util.portal_auth import get_portal_user_from_request
+from ....util.portal_auth import get_portal_admin_from_request
 from ....util.request import json_response
 
 
 class PortalUsersController(http.Controller):
     @http.route("/api/portal/users", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def list_users(self, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
         domain = [("partner_id", "=", partner.id)]
@@ -49,12 +46,9 @@ class PortalUsersController(http.Controller):
 
     @http.route("/api/portal/users/<int:user_id>", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def get_user(self, user_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         user_response = self._get_user(user.crm_partner_id, user_id)
         if user_response["error"]:
@@ -66,12 +60,9 @@ class PortalUsersController(http.Controller):
 
     @http.route("/api/portal/users/<int:user_id>/point", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
     def adjust_user_point(self, user_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
 
@@ -112,12 +103,9 @@ class PortalUsersController(http.Controller):
 
     @http.route("/api/portal/users/<int:user_id>/points", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def list_user_points(self, user_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
         user_response = self._get_user(partner, user_id)
@@ -155,12 +143,9 @@ class PortalUsersController(http.Controller):
 
     @http.route("/api/portal/users/<int:user_id>/coupons", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def list_user_coupons(self, user_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         user_response = self._get_user(user.crm_partner_id, user_id)
         if user_response["error"]:
@@ -193,12 +178,9 @@ class PortalUsersController(http.Controller):
 
     @http.route("/api/portal/users/<int:user_id>/coupons/<int:coupon_id>", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def get_user_coupon(self, user_id, coupon_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         user_response = self._get_user(user.crm_partner_id, user_id)
         if user_response["error"]:

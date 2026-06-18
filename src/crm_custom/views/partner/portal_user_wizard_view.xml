@@ -10,6 +10,7 @@
                     <field name="name"/>
                     <field name="email"/>
                     <field name="password" password="True"/>
+                    <field name="portal_role"/>
                 </group>
                 <footer>
                     <button name="action_create" string="Create" type="object" class="btn-primary"/>

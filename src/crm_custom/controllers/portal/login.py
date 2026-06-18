@@ -1,10 +1,10 @@
 import json
 
 from odoo import fields, http
-from odoo.exceptions import AccessDenied
+from odoo.exceptions import AccessDenied, ValidationError
 from odoo.http import request
 
-from ....util.portal_auth import get_portal_user_from_request
+from ....util.portal_auth import get_portal_role, get_portal_user_from_request
 from ....util.request import json_response
 
 
@@ -100,6 +100,7 @@ class PortalLoginController(http.Controller):
             "user": {
                 "name": user.name,
                 "email": user._get_portal_email(),
+                "role": get_portal_role(user),
             },
             "partner": {
                 "name": partner.name,
@@ -122,6 +123,7 @@ class PortalLoginController(http.Controller):
             "user": {
                 "name": user.name,
                 "email": user._get_portal_email(),
+                "role": get_portal_role(user),
             },
             "partner": {
                 "name": partner.name,
@@ -177,6 +179,7 @@ class PortalLoginController(http.Controller):
             "user": {
                 "name": user.name,
                 "email": user._get_portal_email(),
+                "role": get_portal_role(user),
             },
             "partner": {
                 "name": partner.name,

@@ -5,7 +5,7 @@ from odoo.exceptions import ValidationError
 from odoo.http import request
 from psycopg2 import IntegrityError
 
-from ....util.portal_auth import get_portal_user_from_request
+from ....util.portal_auth import get_portal_admin_from_request
 from ....util.request import json_response
 
 ALLOWED_REDEEM_CREATE_FIELDS = (
@@ -36,12 +36,9 @@ ALLOWED_REDEEM_UPDATE_FIELDS = (
 class PortalRedeemQRCodesController(http.Controller):
     @http.route("/api/portal/redeem-qrcodes", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def list_redeem_qrcodes(self, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         domain = [("partner_id", "=", user.crm_partner_id.id)]
 
@@ -74,12 +71,9 @@ class PortalRedeemQRCodesController(http.Controller):
 
     @http.route("/api/portal/redeem-qrcodes/<int:redeem_id>", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def get_redeem_qrcode(self, redeem_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         redeem_response = self._get_redeem(user.crm_partner_id, redeem_id)
         if redeem_response["error"]:
@@ -94,12 +88,9 @@ class PortalRedeemQRCodesController(http.Controller):
 
     @http.route("/api/portal/redeem-qrcodes", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
     def create_redeem_qrcode(self, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
         payload, parse_error = self._parse_payload()
@@ -142,12 +133,9 @@ class PortalRedeemQRCodesController(http.Controller):
 
     @http.route("/api/portal/redeem-qrcodes/<int:redeem_id>", type="http", auth="public", methods=["PUT"], csrf=False, cors="*")
     def update_redeem_qrcode(self, redeem_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
         redeem_response = self._get_redeem(partner, redeem_id)

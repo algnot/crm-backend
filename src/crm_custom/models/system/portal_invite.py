@@ -35,6 +35,15 @@ class PartnerPortalInvite(models.Model):
     expires_at = fields.Datetime(string="Expires At", required=True, index=True)
     accepted_at = fields.Datetime(string="Accepted At", readonly=True)
     invite_url = fields.Char(string="Invite URL", compute="_compute_invite_url")
+    portal_role = fields.Selection(
+        selection=[
+            ("admin", "Admin"),
+            ("operation", "Operation"),
+        ],
+        string="Portal Role",
+        default="admin",
+        required=True,
+    )
 
     partner_id = fields.Many2one(
         "partner",
@@ -80,10 +89,13 @@ class PartnerPortalInvite(models.Model):
             )
 
     @api.model
-    def create_invite(self, partner, invited_by, name, email):
+    def create_invite(self, partner, invited_by, name, email, portal_role=None):
         normalized_email = self.env["res.users"]._normalize_portal_email(email)
         if not normalized_email:
             raise ValidationError("Email is required.")
+        portal_role = self.env["res.users"]._validate_portal_role(
+            portal_role or self.env["res.users"].PORTAL_ROLE_ADMIN
+        )
 
         if self.env["res.users"]._find_portal_user(partner, normalized_email):
             raise ValidationError(
@@ -107,6 +119,7 @@ class PartnerPortalInvite(models.Model):
             "email": normalized_email,
             "partner_id": partner.id,
             "invited_by_id": invited_by.id,
+            "portal_role": portal_role,
             "expires_at": now + timedelta(hours=self._get_invite_lifetime_hours()),
         })
 
@@ -142,6 +155,7 @@ class PartnerPortalInvite(models.Model):
             (name or invite.name).strip(),
             invite.email,
             password,
+            portal_role=invite.portal_role,
         )
         invite.write({
             "state": "accepted",

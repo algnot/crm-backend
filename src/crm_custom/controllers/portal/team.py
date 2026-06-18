@@ -4,19 +4,19 @@ from odoo import fields, http
 from odoo.exceptions import ValidationError
 from odoo.http import request
 
-from ....util.portal_auth import get_portal_user_from_request
+from ....util.portal_auth import (
+    get_portal_admin_from_request,
+    get_portal_role,
+)
 from ....util.request import json_response
 
 
 class PortalTeamController(http.Controller):
     @http.route("/api/portal/team", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def list_team_users(self, **kwargs):
-        portal_user = get_portal_user_from_request()
-        if not portal_user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        portal_user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         domain = [
             ("is_partner_portal", "=", True),
@@ -60,12 +60,9 @@ class PortalTeamController(http.Controller):
 
     @http.route("/api/portal/team", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
     def create_team_user(self, **kwargs):
-        portal_user = get_portal_user_from_request()
-        if not portal_user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        portal_user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         payload, parse_error = self._parse_payload()
         if parse_error:
@@ -92,6 +89,7 @@ class PortalTeamController(http.Controller):
                 name,
                 email,
                 password,
+                portal_role=payload.get("role"),
             )
         except ValidationError as error:
             request.env.cr.rollback()
@@ -104,14 +102,68 @@ class PortalTeamController(http.Controller):
             "team_user": self._serialize_team_user(team_user),
         }, status=201)
 
+    @http.route(
+        "/api/portal/team/<int:user_id>",
+        type="http",
+        auth="public",
+        methods=["PUT"],
+        csrf=False,
+        cors="*",
+    )
+    def update_team_user(self, user_id, **kwargs):
+        portal_user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
+
+        payload, parse_error = self._parse_payload()
+        if parse_error:
+            return parse_error
+
+        team_user = request.env["res.users"].sudo().search([
+            ("id", "=", user_id),
+            ("is_partner_portal", "=", True),
+            ("crm_partner_id", "=", portal_user.crm_partner_id.id),
+        ], limit=1)
+        if not team_user:
+            return json_response(
+                {"error": "team_user_not_found", "message": "ไม่พบ portal user ดังกล่าว"},
+                status=404,
+            )
+
+        if not any([
+            payload.get("name") is not None,
+            payload.get("role") is not None,
+            payload.get("active") is not None,
+            payload.get("password"),
+        ]):
+            return json_response(
+                {"error": "invalid_request", "message": "ไม่มีข้อมูลสำหรับแก้ไข"},
+                status=400,
+            )
+
+        try:
+            team_user.update_partner_portal_user(
+                name=payload.get("name"),
+                portal_role=payload.get("role"),
+                active=payload.get("active"),
+                password=payload.get("password"),
+            )
+        except ValidationError as error:
+            request.env.cr.rollback()
+            return json_response(
+                {"error": "team_user_not_allowed", "message": str(error)},
+                status=400,
+            )
+
+        return json_response({
+            "team_user": self._serialize_team_user(team_user),
+        })
+
     @http.route("/api/portal/team/invites", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def list_invites(self, **kwargs):
-        portal_user = get_portal_user_from_request()
-        if not portal_user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        portal_user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         domain = [("partner_id", "=", portal_user.crm_partner_id.id)]
 
@@ -138,12 +190,9 @@ class PortalTeamController(http.Controller):
 
     @http.route("/api/portal/team/invites", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
     def create_invite(self, **kwargs):
-        portal_user = get_portal_user_from_request()
-        if not portal_user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        portal_user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         payload, parse_error = self._parse_payload()
         if parse_error:
@@ -163,6 +212,7 @@ class PortalTeamController(http.Controller):
                 portal_user,
                 name or email,
                 email,
+                portal_role=payload.get("role"),
             )
         except ValidationError as error:
             request.env.cr.rollback()
@@ -177,12 +227,9 @@ class PortalTeamController(http.Controller):
 
     @http.route("/api/portal/team/invites/<int:invite_id>", type="http", auth="public", methods=["DELETE"], csrf=False, cors="*")
     def cancel_invite(self, invite_id, **kwargs):
-        portal_user = get_portal_user_from_request()
-        if not portal_user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        portal_user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         invite = request.env["partner.portal.invite"].sudo().search([
             ("id", "=", invite_id),
@@ -221,6 +268,7 @@ class PortalTeamController(http.Controller):
             "invite": {
                 "email": invite.email,
                 "name": invite.name,
+                "role": invite.portal_role,
                 "expires_at": fields.Datetime.to_string(invite.expires_at),
                 "partner": {
                     "name": partner.name,
@@ -264,6 +312,7 @@ class PortalTeamController(http.Controller):
             "user": {
                 "name": team_user.name,
                 "email": team_user._get_portal_email(),
+                "role": get_portal_role(team_user),
             },
             "partner": {
                 "name": partner.name,
@@ -294,6 +343,7 @@ class PortalTeamController(http.Controller):
             "id": user.id,
             "name": user.name,
             "email": user._get_portal_email(),
+            "role": get_portal_role(user),
             "active": user.active,
             "create_date": fields.Datetime.to_string(user.create_date),
         }
@@ -304,6 +354,7 @@ class PortalTeamController(http.Controller):
             "id": invite.id,
             "name": invite.name,
             "email": invite.email,
+            "role": invite.portal_role,
             "state": invite.state,
             "token": invite.token,
             "invite_url": invite.invite_url or False,

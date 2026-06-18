@@ -6,6 +6,9 @@ class ResUsers(models.Model):
     _inherit = "res.users"
 
     PORTAL_LOGIN_SEPARATOR = ":"
+    PORTAL_ROLE_ADMIN = "admin"
+    PORTAL_ROLE_OPERATION = "operation"
+    PORTAL_ROLES = (PORTAL_ROLE_ADMIN, PORTAL_ROLE_OPERATION)
 
     crm_partner_id = fields.Many2one(
         "partner",
@@ -13,10 +16,46 @@ class ResUsers(models.Model):
         ondelete="restrict",
     )
     is_partner_portal = fields.Boolean(string="Partner Portal User", default=False)
+    portal_role = fields.Selection(
+        selection=[
+            (PORTAL_ROLE_ADMIN, "Admin"),
+            (PORTAL_ROLE_OPERATION, "Operation"),
+        ],
+        string="Portal Role",
+        default=PORTAL_ROLE_ADMIN,
+    )
 
     @api.model
     def _normalize_portal_email(self, email):
         return (email or "").strip().lower()
+
+    @api.model
+    def _validate_portal_role(self, role):
+        if role not in self.PORTAL_ROLES:
+            raise ValidationError("Portal role must be admin or operation.")
+        return role
+
+    def is_portal_admin(self):
+        self.ensure_one()
+        return (self.portal_role or self.PORTAL_ROLE_ADMIN) == self.PORTAL_ROLE_ADMIN
+
+    def _check_partner_admin_exists(self, partner, exclude_user=None):
+        domain = [
+            ("is_partner_portal", "=", True),
+            ("crm_partner_id", "=", partner.id),
+            ("portal_role", "=", self.PORTAL_ROLE_ADMIN),
+            ("active", "=", True),
+        ]
+        if exclude_user:
+            domain.append(("id", "!=", exclude_user.id))
+        if not self.search_count(domain):
+            raise ValidationError("ต้องมี admin อย่างน้อย 1 คน")
+
+    @api.model
+    def migrate_portal_user_roles(self):
+        for user in self.sudo().search([("is_partner_portal", "=", True)]):
+            if not user.portal_role:
+                user.write({"portal_role": self.PORTAL_ROLE_ADMIN})
 
     @api.model
     def _make_portal_login(self, partner, email):
@@ -82,12 +121,13 @@ class ResUsers(models.Model):
                 )
 
     @api.model
-    def create_partner_portal_user(self, partner, name, email, password):
+    def create_partner_portal_user(self, partner, name, email, password, portal_role=None):
         partner_portal_group = self.env.ref("crm_custom.group_partner_portal")
         public_group = self.env.ref("base.group_public")
         normalized_email = self._normalize_portal_email(email)
         if not normalized_email:
             raise ValidationError("Email is required.")
+        portal_role = self._validate_portal_role(portal_role or self.PORTAL_ROLE_ADMIN)
 
         existing = self._find_portal_user(partner, normalized_email)
         if existing:
@@ -104,9 +144,54 @@ class ResUsers(models.Model):
             "password": password,
             "crm_partner_id": partner.id,
             "is_partner_portal": True,
+            "portal_role": portal_role,
             "groups_id": [(6, 0, [partner_portal_group.id, public_group.id])],
             "active": True,
         })
+
+    def update_partner_portal_user(
+        self,
+        name=None,
+        portal_role=None,
+        active=None,
+        password=None,
+    ):
+        self.ensure_one()
+        self._ensure_portal_user()
+
+        vals = {}
+        if name is not None:
+            cleaned_name = name.strip()
+            if not cleaned_name:
+                raise ValidationError("Name is required.")
+            vals["name"] = cleaned_name
+
+        if portal_role is not None:
+            vals["portal_role"] = self._validate_portal_role(portal_role)
+
+        if active is not None:
+            vals["active"] = bool(active)
+
+        if password:
+            if len(password) < 8:
+                raise ValidationError("Password must be at least 8 characters.")
+            vals["password"] = password
+
+        if not vals:
+            return self
+
+        losing_admin = (
+            self.portal_role == self.PORTAL_ROLE_ADMIN
+            and (
+                vals.get("portal_role") == self.PORTAL_ROLE_OPERATION
+                or vals.get("active") is False
+            )
+        )
+        if losing_admin:
+            self._check_partner_admin_exists(self.crm_partner_id, exclude_user=self)
+
+        self.write(vals)
+        return self
 
     @api.model
     def fix_partner_portal_groups(self):

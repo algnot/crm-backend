@@ -5,7 +5,7 @@ from odoo.exceptions import ValidationError
 from odoo.http import request
 from psycopg2 import IntegrityError
 
-from ....util.portal_auth import get_portal_user_from_request
+from ....util.portal_auth import get_portal_admin_from_request
 from ....util.request import csv_response, json_response
 
 MAX_CODE_BATCH_SIZE = 2000
@@ -46,12 +46,9 @@ ALLOWED_COUPON_UPDATE_FIELDS = (
 class PortalCouponsController(http.Controller):
     @http.route("/api/portal/coupons", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def list_coupons(self, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         coupons = request.env["partner.coupon"].sudo().search([
             ("partner_id", "=", user.crm_partner_id.id),
@@ -63,12 +60,9 @@ class PortalCouponsController(http.Controller):
 
     @http.route("/api/portal/coupons/<int:coupon_id>", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def get_coupon(self, coupon_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         coupon_response = self._get_coupon(user.crm_partner_id, coupon_id)
         if coupon_response["error"]:
@@ -83,12 +77,9 @@ class PortalCouponsController(http.Controller):
 
     @http.route("/api/portal/coupons/<int:coupon_id>/redemptions", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def list_coupon_redemptions(self, coupon_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         coupon_response = self._get_coupon(user.crm_partner_id, coupon_id)
         if coupon_response["error"]:
@@ -130,12 +121,9 @@ class PortalCouponsController(http.Controller):
 
     @http.route("/api/portal/coupons", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
     def create_coupon(self, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
         payload, parse_error = self._parse_payload()
@@ -197,12 +185,9 @@ class PortalCouponsController(http.Controller):
 
     @http.route("/api/portal/coupons/<int:coupon_id>", type="http", auth="public", methods=["PUT"], csrf=False, cors="*")
     def update_coupon(self, coupon_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
         coupon_response = self._get_coupon(partner, coupon_id)
@@ -258,12 +243,9 @@ class PortalCouponsController(http.Controller):
         cors="*",
     )
     def download_coupon_codes_import_template(self, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         csv_content = request.env["partner.coupon"].get_import_template_csv_content()
         return csv_response(csv_content, "coupon_code_import_template.csv")
@@ -277,12 +259,9 @@ class PortalCouponsController(http.Controller):
         cors="*",
     )
     def add_coupon_codes(self, coupon_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         coupon_response = self._get_coupon(user.crm_partner_id, coupon_id)
         if coupon_response["error"]:
@@ -337,12 +316,9 @@ class PortalCouponsController(http.Controller):
         cors="*",
     )
     def export_coupon_codes(self, coupon_id, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_portal_admin_from_request()
+        if auth_error:
+            return auth_error
 
         coupon_response = self._get_coupon(user.crm_partner_id, coupon_id)
         if coupon_response["error"]:

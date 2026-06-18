@@ -15,6 +15,15 @@ class PartnerPortalUserWizard(models.TransientModel):
     name = fields.Char(string="Name", required=True)
     email = fields.Char(string="Email", required=True)
     password = fields.Char(string="Password", required=True)
+    portal_role = fields.Selection(
+        selection=[
+            ("admin", "Admin"),
+            ("operation", "Operation"),
+        ],
+        string="Portal Role",
+        default="admin",
+        required=True,
+    )
 
     def action_create(self):
         self.ensure_one()
@@ -26,5 +35,6 @@ class PartnerPortalUserWizard(models.TransientModel):
             self.name.strip(),
             self.email.strip(),
             self.password,
+            portal_role=self.portal_role,
         )
         return {"type": "ir.actions.act_window_close"}

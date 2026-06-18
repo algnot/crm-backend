@@ -21,14 +21,30 @@ class PortalLoginController(http.Controller):
 
         email = (payload.get("email") or payload.get("login") or "").strip().lower()
         password = payload.get("password") or ""
+        domain = (payload.get("domain") or payload.get("slug") or "").strip()
         if not email or not password:
             return json_response(
                 {"error": "invalid_request", "message": "Email and password are required."},
                 status=400,
             )
+        if not domain:
+            return json_response(
+                {"error": "invalid_request", "message": "Domain is required."},
+                status=400,
+            )
 
+        partner = request.env["partner"].sudo().search([
+            ("slug", "=", domain),
+        ], limit=1)
+        if not partner:
+            return json_response(
+                {"error": "partner_not_found", "message": "ไม่พบ Partner จาก domain ดังกล่าว"},
+                status=404,
+            )
+
+        scoped_login = request.env["res.users"]._make_portal_login(partner, email)
         credential = {
-            "login": email,
+            "login": scoped_login,
             "password": password,
             "type": "password",
         }
@@ -56,6 +72,15 @@ class PortalLoginController(http.Controller):
                 status=403,
             )
 
+        if user.crm_partner_id.id != partner.id:
+            return json_response(
+                {
+                    "error": "portal_access_denied",
+                    "message": "This account does not belong to the specified partner.",
+                },
+                status=403,
+            )
+
         internal_group = request.env.ref("base.group_user")
         if internal_group in user.groups_id:
             return json_response(
@@ -74,7 +99,7 @@ class PortalLoginController(http.Controller):
             "expires_at": fields.Datetime.to_string(portal_token.expires_at),
             "user": {
                 "name": user.name,
-                "email": user.login,
+                "email": user._get_portal_email(),
             },
             "partner": {
                 "name": partner.name,
@@ -96,7 +121,62 @@ class PortalLoginController(http.Controller):
         return json_response({
             "user": {
                 "name": user.name,
-                "email": user.login,
+                "email": user._get_portal_email(),
+            },
+            "partner": {
+                "name": partner.name,
+                "slug": partner.slug,
+                "logo_url": partner.logo,
+            },
+        })
+
+    @http.route("/api/portal/me", type="http", auth="public", methods=["PUT"], csrf=False, cors="*")
+    def update_portal_me(self, **kwargs):
+        user = get_portal_user_from_request()
+        if not user:
+            return json_response(
+                {"error": "unauthorized", "message": "Invalid or expired token."},
+                status=401,
+            )
+
+        try:
+            payload = json.loads(request.httprequest.get_data(as_text=True) or "{}")
+        except json.JSONDecodeError:
+            return json_response(
+                {"error": "invalid_json", "message": "Invalid JSON body."},
+                status=400,
+            )
+
+        current_password = payload.get("current_password")
+        new_password = payload.get("password")
+        email = payload.get("email")
+        name = payload.get("name")
+
+        if not any([name is not None, email is not None, new_password]):
+            return json_response(
+                {"error": "invalid_request", "message": "No profile fields to update."},
+                status=400,
+            )
+
+        try:
+            user.sudo().update_portal_account(
+                name=name,
+                email=email,
+                current_password=current_password,
+                new_password=new_password,
+            )
+        except ValidationError as error:
+            request.env.cr.rollback()
+            return json_response(
+                {"error": "profile_not_allowed", "message": str(error)},
+                status=400,
+            )
+
+        partner = user.crm_partner_id
+        return json_response({
+            "user": {
+                "name": user.name,
+                "email": user._get_portal_email(),
             },
             "partner": {
                 "name": partner.name,

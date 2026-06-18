@@ -54,6 +54,13 @@ class PartnerPortalToken(models.Model):
         })
 
     @api.model
+    def revoke_for_user(self, user):
+        self.search([
+            ("user_id", "=", user.id),
+            ("active", "=", True),
+        ]).write({"active": False})
+
+    @api.model
     def get_user_from_token(self, token):
         if not token:
             return self.env["res.users"]
@@ -72,6 +79,7 @@ class PartnerPortalToken(models.Model):
             not user.active
             or not user.is_partner_portal
             or not user.crm_partner_id
+            or portal_token.partner_id != user.crm_partner_id
         ):
             return self.env["res.users"]
 

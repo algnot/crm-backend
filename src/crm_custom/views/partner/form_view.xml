@@ -228,7 +228,8 @@
                             <field name="portal_user_ids" nolabel="1">
                                 <list create="0" delete="0" edit="0">
                                     <field name="name"/>
-                                    <field name="login" string="Email"/>
+                                    <field name="email" string="Email"/>
+                                    <field name="login" column_invisible="1"/>
                                     <field name="active" widget="boolean_toggle"/>
                                     <field name="is_partner_portal" column_invisible="1"/>
                                 </list>

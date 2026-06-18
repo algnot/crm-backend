@@ -19,5 +19,6 @@ access_crm_user_add_point_wizard,access.crm.user.add.point.wizard,model_crm_user
 access_crm_user_add_coupon_wizard,access.crm.user.add.coupon.wizard,model_crm_user_add_coupon_wizard,,1,1,1,1
 access_crm_partner_receipt_redeem,access.crm.partner.receipt.redeem,model_crm_partner_receipt_redeem,,1,1,1,1
 access_partner_portal_token,access.partner.portal.token,model_partner_portal_token,,1,1,1,1
+access_partner_portal_invite,access.partner.portal.invite,model_partner_portal_invite,,1,1,1,1
 access_partner_portal_user_wizard,access.partner.portal.user.wizard,model_partner_portal_user_wizard,,1,1,1,1
 access_res_users_partner_portal,access.res.users.partner.portal,base.model_res_users,crm_custom.group_partner_portal,1,0,0,0

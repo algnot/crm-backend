@@ -6,3 +6,4 @@ from . import currencies
 from . import redeem_qrcodes
 from . import receipts
 from . import team
+from . import dashboard

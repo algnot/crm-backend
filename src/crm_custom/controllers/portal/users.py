@@ -110,6 +110,114 @@ class PortalUsersController(http.Controller):
             "point": self._serialize_point(point),
         }, status=201)
 
+    @http.route("/api/portal/users/<int:user_id>/points", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
+    def list_user_points(self, user_id, **kwargs):
+        user = get_portal_user_from_request()
+        if not user:
+            return json_response(
+                {"error": "unauthorized", "message": "Invalid or expired token."},
+                status=401,
+            )
+
+        partner = user.crm_partner_id
+        user_response = self._get_user(partner, user_id)
+        if user_response["error"]:
+            return user_response["error"]
+
+        domain = [("user_id", "=", user_response["user"].id)]
+
+        currency_id = self._parse_int(kwargs.get("currency_id"))
+        if currency_id:
+            currency_response = self._get_currency(partner, currency_id)
+            if currency_response["error"]:
+                return currency_response["error"]
+            domain.append(("currency_id", "=", currency_response["currency"].id))
+
+        point_type = (kwargs.get("type") or "").strip()
+        if point_type in {"earn", "transfer", "burn"}:
+            domain.append(("type", "=", point_type))
+
+        limit = self._parse_int(kwargs.get("limit"))
+        offset = self._parse_int(kwargs.get("offset")) or 0
+
+        points = request.env["crm.user.point"].sudo().search(
+            domain,
+            limit=limit,
+            offset=offset,
+            order="given_date desc, id desc",
+        )
+        total = request.env["crm.user.point"].sudo().search_count(domain)
+
+        return json_response({
+            "points": [self._serialize_point_history(point) for point in points],
+            "total": total,
+        })
+
+    @http.route("/api/portal/users/<int:user_id>/coupons", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
+    def list_user_coupons(self, user_id, **kwargs):
+        user = get_portal_user_from_request()
+        if not user:
+            return json_response(
+                {"error": "unauthorized", "message": "Invalid or expired token."},
+                status=401,
+            )
+
+        user_response = self._get_user(user.crm_partner_id, user_id)
+        if user_response["error"]:
+            return user_response["error"]
+
+        domain = [("user_id", "=", user_response["user"].id)]
+
+        is_used = kwargs.get("is_used")
+        if is_used is not None:
+            if str(is_used).lower() in {"1", "true", "yes"}:
+                domain.append(("is_used", "=", True))
+            elif str(is_used).lower() in {"0", "false", "no"}:
+                domain.append(("is_used", "=", False))
+
+        limit = self._parse_int(kwargs.get("limit"))
+        offset = self._parse_int(kwargs.get("offset")) or 0
+
+        coupons = request.env["crm.user.coupon"].sudo().search(
+            domain,
+            limit=limit,
+            offset=offset,
+            order="acquired_date desc, id desc",
+        )
+        total = request.env["crm.user.coupon"].sudo().search_count(domain)
+
+        return json_response({
+            "coupons": [self._serialize_user_coupon(coupon) for coupon in coupons],
+            "total": total,
+        })
+
+    @http.route("/api/portal/users/<int:user_id>/coupons/<int:coupon_id>", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
+    def get_user_coupon(self, user_id, coupon_id, **kwargs):
+        user = get_portal_user_from_request()
+        if not user:
+            return json_response(
+                {"error": "unauthorized", "message": "Invalid or expired token."},
+                status=401,
+            )
+
+        user_response = self._get_user(user.crm_partner_id, user_id)
+        if user_response["error"]:
+            return user_response["error"]
+
+        coupon = request.env["crm.user.coupon"].sudo().search([
+            ("id", "=", coupon_id),
+            ("user_id", "=", user_response["user"].id),
+        ], limit=1)
+        if not coupon:
+            return json_response(
+                {"error": "coupon_not_found", "message": "ไม่พบคูปองดังกล่าว"},
+                status=404,
+            )
+
+        return json_response({
+            "coupon": self._serialize_user_coupon(coupon),
+        })
+
     def _parse_int(self, value):
         try:
             return int(value)
@@ -206,17 +314,108 @@ class PortalUsersController(http.Controller):
         return balances
 
     def _serialize_point(self, point):
-        return {
+        return self._serialize_point_history(point)
+
+    def _serialize_point_history(self, point):
+        data = {
             "id": point.id,
             "name": point.name,
             "value": point.value,
             "type": point.type,
             "admin_note": point.admin_note or False,
             "given_date": fields.Datetime.to_string(point.given_date),
-            "expiration_date": fields.Datetime.to_string(point.expiration_date),
+            "expiration_date": fields.Datetime.to_string(point.expiration_date) if point.expiration_date else False,
             "currency": {
                 "id": point.currency_id.id,
                 "name": point.currency_id.name,
                 "is_default": point.currency_id.is_default,
+                "is_total_spending": point.currency_id.is_total_spending,
             },
+            "source": self._serialize_point_source(point),
         }
+        return data
+
+    def _serialize_point_source(self, point):
+        if point.point_redeem_id:
+            return {
+                "kind": "redeem_qr",
+                "id": point.point_redeem_id.id,
+                "name": point.point_redeem_id.name,
+                "code": point.point_redeem_id.code,
+            }
+        if point.receipt_redeem_id:
+            return {
+                "kind": "receipt",
+                "id": point.receipt_redeem_id.id,
+                "receipt_number": point.receipt_redeem_id.receipt_number,
+            }
+        if point.member_reward_id:
+            return {
+                "kind": "member_reward",
+                "id": point.member_reward_id.id,
+                "event": point.member_reward_event,
+                "name": point.member_reward_id.name,
+            }
+        if point.admin_note:
+            return {
+                "kind": "admin",
+                "note": point.admin_note,
+            }
+        return False
+
+    def _serialize_user_coupon(self, coupon):
+        return {
+            "id": coupon.id,
+            "name": coupon.name,
+            "code": coupon.code,
+            "value": coupon.value,
+            "admin_note": coupon.admin_note or False,
+            "acquired_date": fields.Datetime.to_string(coupon.acquired_date),
+            "expiration_date": fields.Datetime.to_string(coupon.expiration_date) if coupon.expiration_date else False,
+            "is_used": coupon.is_used,
+            "used_date": fields.Datetime.to_string(coupon.used_date) if coupon.used_date else False,
+            "coupon": {
+                "id": coupon.coupon_id.id,
+                "name": coupon.coupon_id.name,
+                "term_and_condition": coupon.coupon_id.term_and_condition or False,
+                "image_url": coupon.coupon_id.image or False,
+            },
+            "currency": {
+                "id": coupon.currency_id.id,
+                "name": coupon.currency_id.name,
+                "is_default": coupon.currency_id.is_default,
+            },
+            "point": {
+                "id": coupon.point_id.id,
+                "value": coupon.point_id.value,
+                "type": coupon.point_id.type,
+            } if coupon.point_id else False,
+            "source": self._serialize_coupon_source(coupon),
+        }
+
+    def _serialize_coupon_source(self, coupon):
+        if coupon.point_redeem_id:
+            return {
+                "kind": "redeem_qr",
+                "id": coupon.point_redeem_id.id,
+                "name": coupon.point_redeem_id.name,
+                "code": coupon.point_redeem_id.code,
+            }
+        if coupon.member_reward_id:
+            return {
+                "kind": "member_reward",
+                "id": coupon.member_reward_id.id,
+                "event": coupon.member_reward_event,
+                "name": coupon.member_reward_id.name,
+            }
+        if coupon.admin_note:
+            return {
+                "kind": "admin",
+                "note": coupon.admin_note,
+            }
+        if coupon.point_id:
+            return {
+                "kind": "redeem",
+                "point_id": coupon.point_id.id,
+            }
+        return False

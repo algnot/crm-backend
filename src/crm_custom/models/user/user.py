@@ -155,12 +155,85 @@ class User(models.Model):
             spending = record._get_total_spending_balance()
             tier = record._get_tier_for_spending(spending)
             if record.tier_id != tier:
+                old_tier = record.tier_id
                 record.tier_id = tier
+                record._grant_tier_promotion_rewards(old_tier, tier)
+
+    def _has_member_reward_grant(self, reward):
+        self.ensure_one()
+        if reward.reward_type == "point":
+            return bool(self.point_ids.filtered(lambda point: point.member_reward_id == reward))
+        return bool(self.coupon_ids.filtered(lambda coupon: coupon.member_reward_id == reward))
+
+    def _grant_member_reward_point(self, reward, event, tier=False):
+        self.ensure_one()
+        if self._has_member_reward_grant(reward):
+            return False
+
+        self.env["crm.user.point"].create({
+            "name": reward.name,
+            "admin_note": reward.name,
+            "value": reward.point_value,
+            "type": "earn",
+            "given_date": fields.Datetime.now(),
+            "currency_id": reward.point_currency_id.id,
+            "user_id": self.id,
+            "member_reward_id": reward.id,
+            "member_reward_event": event,
+            "member_reward_tier_id": tier.id if tier else False,
+        })
+        return True
+
+    def _grant_member_reward_coupon(self, reward, event, tier=False):
+        self.ensure_one()
+        if self._has_member_reward_grant(reward):
+            return False
+
+        try:
+            user_coupon = reward.coupon_id.grant_to_user(self, reward.name)
+        except ValidationError:
+            return False
+
+        user_coupon.write({
+            "member_reward_id": reward.id,
+            "member_reward_event": event,
+            "member_reward_tier_id": tier.id if tier else False,
+        })
+        return True
+
+    def _grant_member_rewards(self, rewards, event, tier=False):
+        self.ensure_one()
+        for reward in rewards:
+            if reward.reward_type == "point":
+                self._grant_member_reward_point(reward, event, tier=tier)
+            elif reward.reward_type == "coupon":
+                self._grant_member_reward_coupon(reward, event, tier=tier)
+
+    def _grant_join_rewards(self):
+        for record in self:
+            record._grant_member_rewards(
+                record.partner_id.join_reward_ids,
+                "join",
+            )
+
+    def _grant_tier_promotion_rewards(self, old_tier, new_tier):
+        self.ensure_one()
+        if not new_tier or not old_tier:
+            return
+        if new_tier.min_spending <= old_tier.min_spending:
+            return
+
+        self._grant_member_rewards(
+            new_tier.promotion_reward_ids,
+            "tier_promotion",
+            tier=new_tier,
+        )
 
     @api.model_create_multi
     def create(self, vals_list):
         users = super().create(vals_list)
         users._update_tier()
+        users._grant_join_rewards()
         return users
 
     def adjust_point(self, value, point_type, currency, note, expiration_date=None):

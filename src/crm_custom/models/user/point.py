@@ -43,6 +43,27 @@ class UserPoint(models.Model):
         string="Receipt Redeem",
     )
 
+    member_reward_id = fields.Many2one(
+        "partner.member.reward",
+        string="Member Reward",
+        readonly=True,
+        ondelete="set null",
+    )
+    member_reward_event = fields.Selection(
+        [
+            ("join", "Join"),
+            ("tier_promotion", "Tier Promotion"),
+        ],
+        string="Member Reward Event",
+        readonly=True,
+    )
+    member_reward_tier_id = fields.Many2one(
+        "partner.tier",
+        string="Member Reward Tier",
+        readonly=True,
+        ondelete="set null",
+    )
+
     @api.constrains("currency_id", "user_id")
     def _check_currency_partner(self):
         for record in self:

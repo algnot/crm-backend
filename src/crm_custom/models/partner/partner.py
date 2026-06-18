@@ -116,6 +116,13 @@ class Inventory(models.Model):
         string="Tiers",
     )
 
+    join_reward_ids = fields.One2many(
+        "partner.member.reward",
+        "partner_id",
+        string="Join Rewards",
+        domain=[("event", "=", "join")],
+    )
+
     ads_ids = fields.One2many(
         "partner.ads",
         "partner_id",

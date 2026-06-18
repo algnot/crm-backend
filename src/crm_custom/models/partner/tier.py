@@ -40,6 +40,13 @@ class PartnerTier(models.Model):
         ondelete="cascade",
     )
 
+    promotion_reward_ids = fields.One2many(
+        "partner.member.reward",
+        "tier_id",
+        string="Promotion Rewards",
+        domain=[("event", "=", "tier_promotion")],
+    )
+
     def _get_s3_image_config(self):
         return {
             "icon": {

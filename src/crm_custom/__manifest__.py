@@ -1,9 +1,9 @@
 {
     "name": "CRM Custom Module",
-    "version": "1.0.18",
+    "version": "1.0.26",
     "summary": "CRM Custom Module",
     "author": "tk dev",
-    "depends": ["base", "mail"],
+    "depends": ["base", "web", "mail"],
     "external_dependencies": {
         "python": ["Pillow", "python-barcode", "boto3"],
     },
@@ -12,7 +12,9 @@
     },
     "data": [
         "security/partner_portal_groups.xml",
+        "security/partner_portal_rules.xml",
         "security/ir.model.access.csv",
+        "data/partner_portal_fix.xml",
         "views/partner/table_view.xml",
         "views/partner/form_view.xml",
         "views/partner/coupons_view.xml",

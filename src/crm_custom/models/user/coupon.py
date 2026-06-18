@@ -56,6 +56,33 @@ class UserCoupon(models.Model):
         readonly=True,
         ondelete="set null",
     )
+    point_redeem_id = fields.Many2one(
+        "crm.partner.point.redeem",
+        string="Point Redeem",
+        readonly=True,
+        ondelete="set null",
+    )
+
+    member_reward_id = fields.Many2one(
+        "partner.member.reward",
+        string="Member Reward",
+        readonly=True,
+        ondelete="set null",
+    )
+    member_reward_event = fields.Selection(
+        [
+            ("join", "Join"),
+            ("tier_promotion", "Tier Promotion"),
+        ],
+        string="Member Reward Event",
+        readonly=True,
+    )
+    member_reward_tier_id = fields.Many2one(
+        "partner.tier",
+        string="Member Reward Tier",
+        readonly=True,
+        ondelete="set null",
+    )
 
     def action_mark_used(self):
         now = fields.Datetime.now()

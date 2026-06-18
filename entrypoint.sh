@@ -28,7 +28,11 @@ if [ "$SERVICE" = "migrator" ]; then
 else
     if [ "$DEBUG" = "1" ]; then
         echo "Starting Odoo with debug..."
-        run_as_odoo python3 /mnt/extra-addons/debug_connect.py
+        run_as_odoo python3 /mnt/extra-addons/debug_connect.py \
+            -c /etc/odoo/odoo.conf \
+            -d crm_backend \
+            --without-demo=all \
+            -u crm_custom
     else
         echo "Starting Odoo..."
         run_as_odoo /usr/bin/odoo -c /etc/odoo/odoo.conf -d crm_backend --without-demo=all -u crm_custom

@@ -40,6 +40,12 @@ class PartnerCouponCreateWizard(models.TransientModel):
         default=15,
     )
     end_time = fields.Datetime(string="End Date")
+    is_show_in_ui = fields.Boolean(string="Show In UI", default=True)
+    max_redeem_per_user = fields.Integer(
+        string="Max Redeem Per User",
+        default=0,
+        help="0 = ไม่จำกัด",
+    )
     code_source = fields.Selection(
         [
             ("generate", "Generate"),
@@ -102,6 +108,8 @@ class PartnerCouponCreateWizard(models.TransientModel):
             "start_time": self.start_time,
             "code_expiry_interval": self.code_expiry_interval,
             "end_time": self.end_time,
+            "is_show_in_ui": self.is_show_in_ui,
+            "max_redeem_per_user": self.max_redeem_per_user,
             "code_source": self.code_source,
             "prefix_code": self.prefix_code,
             "random_range": self.random_range,

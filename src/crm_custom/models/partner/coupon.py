@@ -54,6 +54,18 @@ class PartnerCoupon(models.Model):
         tracking=True,
     )
     end_time = fields.Datetime(string="End Date", tracking=True)
+    is_show_in_ui = fields.Boolean(
+        string="Show In UI",
+        default=True,
+        tracking=True,
+        help="แสดงคูปองนี้ในหน้าบ้านสำหรับให้ผู้ใช้แลก",
+    )
+    max_redeem_per_user = fields.Integer(
+        string="Max Redeem Per User",
+        default=0,
+        tracking=True,
+        help="จำกัดจำนวนครั้งที่ผู้ใช้แต่ละคนแลกได้ (0 = ไม่จำกัด)",
+    )
     total_code_count = fields.Integer(
         string="Total Codes",
         compute="_compute_code_counts",
@@ -173,7 +185,7 @@ class PartnerCoupon(models.Model):
 
         return user_coupon
 
-    def grant_to_user(self, user, note):
+    def grant_to_user(self, user, note, point_redeem_id=False):
         self.ensure_one()
         if not note or not note.strip():
             raise ValidationError("กรุณาระบุหมายเหตุ")
@@ -209,6 +221,7 @@ class PartnerCoupon(models.Model):
             "coupon_id": self.id,
             "user_id": user.id,
             "coupon_code_id": coupon_code.id,
+            "point_redeem_id": point_redeem_id or False,
         })
 
         coupon_code.write({
@@ -456,6 +469,19 @@ class PartnerCoupon(models.Model):
         if not available_count:
             raise ValidationError("คูปองหมดแล้ว")
 
+        if self.max_redeem_per_user > 0:
+            redeem_count = self._get_user_redeem_count(user)
+            if redeem_count >= self.max_redeem_per_user:
+                raise ValidationError("คุณแลกคูปองนี้ครบจำนวนที่กำหนดแล้ว")
+
+    def _get_user_redeem_count(self, user):
+        self.ensure_one()
+        return self.env["crm.user.coupon"].sudo().search_count([
+            ("coupon_id", "=", self.id),
+            ("user_id", "=", user.id),
+            ("point_id", "!=", False),
+        ])
+
     def _get_user_balance(self, user):
         points = self.env["crm.user.point"].sudo().search([
             ("user_id", "=", user.id),
@@ -466,7 +492,7 @@ class PartnerCoupon(models.Model):
         burn = sum(points.filtered(lambda point: point.type == "burn").mapped("value"))
         return earn - transfer - burn
 
-    @api.constrains("value", "random_range", "code_expiry_interval", "code_source")
+    @api.constrains("value", "random_range", "code_expiry_interval", "code_source", "max_redeem_per_user")
     def _check_coupon_numbers(self):
         for record in self:
             if record.value < 0:
@@ -475,6 +501,8 @@ class PartnerCoupon(models.Model):
                 raise ValidationError("Random range ต้องมากกว่า 0")
             if record.code_expiry_interval < 0:
                 raise ValidationError("Expiry interval ต้องมากกว่าหรือเท่ากับ 0")
+            if record.max_redeem_per_user < 0:
+                raise ValidationError("Max redeem per user ต้องมากกว่าหรือเท่ากับ 0")
 
     @api.constrains("start_time", "end_time")
     def _check_coupon_dates(self):

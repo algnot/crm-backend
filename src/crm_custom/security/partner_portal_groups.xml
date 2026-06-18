@@ -8,6 +8,7 @@
     <record id="group_partner_portal" model="res.groups">
         <field name="name">Partner Portal User</field>
         <field name="category_id" ref="module_category_partner_portal"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_public'))]"/>
         <field name="comment">Can authenticate via portal API only. Cannot access Odoo backend.</field>
     </record>
 </odoo>

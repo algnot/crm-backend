@@ -60,6 +60,16 @@ def _build_public_url(bucket, region, object_key):
     return f"https://{bucket}.s3.{region}.amazonaws.com/{object_key}"
 
 
+def _normalize_base64_string(image_data):
+    if not isinstance(image_data, str):
+        return image_data
+
+    normalized = image_data.strip()
+    if normalized.startswith("data:"):
+        _, _, normalized = normalized.partition(",")
+    return normalized.strip()
+
+
 def _decode_image_data(image_data):
     if not image_data:
         return b"", "image/jpeg", ".jpg"
@@ -70,7 +80,10 @@ def _decode_image_data(image_data):
     if isinstance(image_data, str):
         if image_data.startswith("http://") or image_data.startswith("https://"):
             return None, None, None
-        image_bytes = base64.b64decode(image_data)
+        try:
+            image_bytes = base64.b64decode(_normalize_base64_string(image_data))
+        except Exception as error:
+            raise ValidationError("รูปภาพ base64 ไม่ถูกต้อง") from error
     else:
         image_bytes = base64.b64decode(image_data)
 

@@ -42,6 +42,8 @@
                     <field name="start_time"/>
                     <field name="code_expiry_interval"/>
                     <field name="end_time"/>
+                    <field name="is_show_in_ui"/>
+                    <field name="max_redeem_per_user"/>
                 </group>
                 <footer>
                     <button name="action_create" string="Create" type="object" class="btn-primary"/>

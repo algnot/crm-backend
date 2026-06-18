@@ -27,6 +27,11 @@ class UserPointRedeemGenerateWizard(models.TransientModel):
     limit_per_user = fields.Integer(string="Limit per user", default=1)
     limit_per_qr = fields.Integer(string="Limit per QR", default=1)
     expiration_date = fields.Datetime(string="Expiration Date")
+    reward_coupon_id = fields.Many2one(
+        "partner.coupon",
+        string="Reward Coupon",
+        domain="[('partner_id', '=', partner_id)]",
+    )
 
     @api.model
     def default_get(self, fields_list):
@@ -54,6 +59,7 @@ class UserPointRedeemGenerateWizard(models.TransientModel):
             "limit_per_user": self.limit_per_user,
             "limit_per_qr": self.limit_per_qr,
             "expiration_date": self.expiration_date,
+            "reward_coupon_id": self.reward_coupon_id.id if self.reward_coupon_id else False,
         })
 
         return {

@@ -49,10 +49,23 @@ class PartnerPointRedeem(models.Model):
         compute="_compute_redeemed_count",
     )
 
+    reward_coupon_id = fields.Many2one(
+        "partner.coupon",
+        string="Reward Coupon",
+        tracking=True,
+        domain="[('partner_id', '=', partner_id)]",
+        help="คูปองที่จะมอบให้ผู้ใช้เมื่อ redeem QR สำเร็จ",
+    )
+
     point_ids = fields.One2many(
         "crm.user.point",
         "point_redeem_id",
         string="Point Redeem",
+    )
+    user_coupon_ids = fields.One2many(
+        "crm.user.coupon",
+        "point_redeem_id",
+        string="Reward Coupons",
     )
 
     partner_id = fields.Many2one(
@@ -109,24 +122,54 @@ class PartnerPointRedeem(models.Model):
                 'style="width:220px;height:220px;" alt="Redeem QR Code"/>'
             )
 
-    @api.depends("point_ids")
+    @api.depends("point_ids", "user_coupon_ids")
     def _compute_redeemed_count(self):
         for record in self:
-            record.redeemed_count = len(record.point_ids)
+            record.redeemed_count = max(
+                len(record.point_ids),
+                len(record.user_coupon_ids),
+            )
 
     def redeem_for_user(self, user):
         self.ensure_one()
         self._check_can_redeem(user)
 
-        return self.env["crm.user.point"].sudo().create({
-            "name": self.name,
-            "value": self.value,
-            "type": self.type,
-            "given_date": fields.Datetime.now(),
-            "currency_id": self.currency_id.id,
-            "user_id": user.id,
-            "point_redeem_id": self.id,
-        })
+        point = False
+        if self.value > 0:
+            point = self.env["crm.user.point"].sudo().create({
+                "name": self.name,
+                "value": self.value,
+                "type": self.type,
+                "given_date": fields.Datetime.now(),
+                "currency_id": self.currency_id.id,
+                "user_id": user.id,
+                "point_redeem_id": self.id,
+            })
+
+        user_coupon = False
+        if self.reward_coupon_id:
+            user_coupon = self.reward_coupon_id.grant_to_user(
+                user,
+                f"Redeem QR: {self.name}",
+                point_redeem_id=self.id,
+            )
+
+        return {
+            "point": point,
+            "user_coupon": user_coupon,
+        }
+
+    def _get_user_redeem_count(self, user):
+        self.ensure_one()
+        point_count = self.env["crm.user.point"].sudo().search_count([
+            ("point_redeem_id", "=", self.id),
+            ("user_id", "=", user.id),
+        ])
+        coupon_count = self.env["crm.user.coupon"].sudo().search_count([
+            ("point_redeem_id", "=", self.id),
+            ("user_id", "=", user.id),
+        ])
+        return max(point_count, coupon_count)
 
     def _check_can_redeem(self, user):
         self.ensure_one()
@@ -142,15 +185,43 @@ class PartnerPointRedeem(models.Model):
         if self.currency_id.partner_id != self.partner_id:
             raise ValidationError("Point currency must belong to this partner.")
 
+        if self.value <= 0 and not self.reward_coupon_id:
+            raise ValidationError("ต้องระบุ point value หรือ reward coupon อย่างน้อย 1 รายการ")
+
+        if self.reward_coupon_id:
+            if self.reward_coupon_id.partner_id != self.partner_id:
+                raise ValidationError("Reward coupon ต้องอยู่ใน Partner เดียวกัน")
+            available_count = self.env["partner.coupon.code"].sudo().search_count([
+                ("coupon_id", "=", self.reward_coupon_id.id),
+                ("state", "=", "available"),
+            ])
+            if not available_count:
+                raise ValidationError("คูปองรางวัลหมดแล้ว")
+
         if self.limit_per_qr and self.redeemed_count >= self.limit_per_qr:
             raise ValidationError("Redeem QR code has reached its limit.")
 
-        user_redeem_count = self.env["crm.user.point"].sudo().search_count([
-            ("point_redeem_id", "=", self.id),
-            ("user_id", "=", user.id),
-        ])
+        user_redeem_count = self._get_user_redeem_count(user)
         if self.limit_per_user and user_redeem_count >= self.limit_per_user:
             raise ValidationError("User has reached the redeem limit.")
+
+    @api.constrains("value", "reward_coupon_id")
+    def _check_reward_configuration(self):
+        for record in self:
+            if record.value < 0:
+                raise ValidationError("Value ต้องมากกว่าหรือเท่ากับ 0")
+            if record.value <= 0 and not record.reward_coupon_id:
+                raise ValidationError("ต้องระบุ point value หรือ reward coupon อย่างน้อย 1 รายการ")
+
+    @api.constrains("reward_coupon_id", "partner_id")
+    def _check_reward_coupon_partner(self):
+        for record in self:
+            if (
+                record.reward_coupon_id
+                and record.partner_id
+                and record.reward_coupon_id.partner_id != record.partner_id
+            ):
+                raise ValidationError("Reward coupon ต้องอยู่ใน Partner เดียวกัน")
 
     @api.constrains("limit_per_user", "limit_per_qr")
     def _check_limits(self):

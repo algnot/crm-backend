@@ -130,6 +130,51 @@
                                             <field name="convert_points"/>
                                             <field name="is_show_in_ui" widget="boolean_toggle"/>
                                         </list>
+                                        <form>
+                                            <group>
+                                                <group>
+                                                    <field name="name"/>
+                                                    <field name="code"/>
+                                                    <field name="color"/>
+                                                    <field name="convert_points"/>
+                                                </group>
+                                                <group>
+                                                    <field name="icon_file" widget="image" options="{'size': [128, 128]}"/>
+                                                    <field name="icon" invisible="1"/>
+                                                    <field name="min_spending" string="Min Point"/>
+                                                    <field name="max_spending" string="Max Point"/>
+                                                    <field name="is_show_in_ui"/>
+                                                </group>
+                                            </group>
+                                            <separator string="Promotion Rewards"/>
+                                            <field name="promotion_reward_ids" nolabel="1" context="{'default_event': 'tier_promotion', 'default_partner_id': parent.id, 'default_tier_id': id}">
+                                                <list editable="bottom">
+                                                    <field name="event" column_invisible="1"/>
+                                                    <field name="partner_id" column_invisible="1"/>
+                                                    <field name="tier_id" column_invisible="1"/>
+                                                    <field name="sequence" widget="handle"/>
+                                                    <field name="reward_type"/>
+                                                    <field name="point_value" invisible="reward_type != 'point'" required="reward_type == 'point'"/>
+                                                    <field name="point_currency_id" invisible="reward_type != 'point'" required="reward_type == 'point'"/>
+                                                    <field name="coupon_id" invisible="reward_type != 'coupon'" required="reward_type == 'coupon'"/>
+                                                </list>
+                                            </field>
+                                        </form>
+                                    </field>
+                                </page>
+                                <page string="Member Rewards" name="member_rewards">
+                                    <separator string="New Member Rewards"/>
+                                    <p class="text-muted">กำหนด Point หรือ Coupon ที่จะมอบให้เมื่อมีสมาชิกใหม่สมัครเข้าร่วม</p>
+                                    <field name="join_reward_ids" nolabel="1" context="{'default_event': 'join', 'default_partner_id': id}">
+                                        <list editable="bottom">
+                                            <field name="event" column_invisible="1"/>
+                                            <field name="partner_id" column_invisible="1"/>
+                                            <field name="sequence" widget="handle"/>
+                                            <field name="reward_type"/>
+                                            <field name="point_value" invisible="reward_type != 'point'" required="reward_type == 'point'"/>
+                                            <field name="point_currency_id" invisible="reward_type != 'point'" required="reward_type == 'point'"/>
+                                            <field name="coupon_id" invisible="reward_type != 'coupon'" required="reward_type == 'coupon'"/>
+                                        </list>
                                     </field>
                                 </page>
                                 <page string="Redeem QR" name="redeem_qr">
@@ -139,6 +184,7 @@
                                             <field name="currency_id"/>
                                             <field name="value"/>
                                             <field name="type"/>
+                                            <field name="reward_coupon_id" optional="show"/>
                                             <field name="expiration_date"/>
                                             <field name="active" widget="boolean_toggle"/>
                                         </list>
@@ -195,6 +241,8 @@
                                     <field name="name"/>
                                     <field name="currency_id"/>
                                     <field name="value"/>
+                                    <field name="is_show_in_ui" widget="boolean_toggle"/>
+                                    <field name="max_redeem_per_user" string="Max/User" optional="show"/>
                                     <field name="available_code_count" string="Available"/>
                                     <field name="redeemed_count" string="Redeemed" optional="hide"/>
                                     <field name="code_source" optional="hide"/>

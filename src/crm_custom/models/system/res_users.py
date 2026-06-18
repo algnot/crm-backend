@@ -33,6 +33,7 @@ class ResUsers(models.Model):
     @api.model
     def create_partner_portal_user(self, partner, name, email, password):
         partner_portal_group = self.env.ref("crm_custom.group_partner_portal")
+        public_group = self.env.ref("base.group_public")
         login = (email or "").strip().lower()
         if not login:
             raise ValidationError("Email is required.")
@@ -48,6 +49,22 @@ class ResUsers(models.Model):
             "password": password,
             "crm_partner_id": partner.id,
             "is_partner_portal": True,
-            "groups_id": [(6, 0, [partner_portal_group.id])],
+            "groups_id": [(6, 0, [partner_portal_group.id, public_group.id])],
             "active": True,
         })
+
+    @api.model
+    def fix_partner_portal_groups(self):
+        partner_portal_group = self.env.ref("crm_custom.group_partner_portal", raise_if_not_found=False)
+        public_group = self.env.ref("base.group_public", raise_if_not_found=False)
+        if not partner_portal_group or not public_group:
+            return
+
+        for user in self.sudo().search([("is_partner_portal", "=", True)]):
+            groups_to_add = []
+            if partner_portal_group not in user.groups_id:
+                groups_to_add.append((4, partner_portal_group.id))
+            if public_group not in user.groups_id:
+                groups_to_add.append((4, public_group.id))
+            if groups_to_add:
+                user.write({"groups_id": groups_to_add})

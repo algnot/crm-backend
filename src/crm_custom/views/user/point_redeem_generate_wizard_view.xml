@@ -13,6 +13,7 @@
                     <field name="limit_per_user"/>
                     <field name="limit_per_qr"/>
                     <field name="expiration_date"/>
+                    <field name="reward_coupon_id"/>
                 </group>
                 <footer>
                     <button name="action_generate" string="Generate" type="object" class="btn-primary"/>

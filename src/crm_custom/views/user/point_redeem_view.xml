@@ -10,6 +10,7 @@
                 <field name="currency_id"/>
                 <field name="value"/>
                 <field name="type"/>
+                <field name="reward_coupon_id" optional="show"/>
                 <field name="limit_per_user"/>
                 <field name="limit_per_qr"/>
                 <field name="redeemed_count"/>
@@ -45,6 +46,7 @@
                             <field name="limit_per_qr"/>
                             <field name="redeemed_count"/>
                             <field name="expiration_date"/>
+                            <field name="reward_coupon_id"/>
                         </group>
                     </group>
                     <group>
@@ -61,6 +63,17 @@
                                     <field name="value"/>
                                     <field name="type"/>
                                     <field name="given_date"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Reward Coupons">
+                            <field name="user_coupon_ids" readonly="1" nolabel="1">
+                                <list>
+                                    <field name="user_id"/>
+                                    <field name="code"/>
+                                    <field name="coupon_id"/>
+                                    <field name="acquired_date"/>
+                                    <field name="is_used"/>
                                 </list>
                             </field>
                         </page>

@@ -47,7 +47,7 @@ class RedeemPointController(http.Controller):
             )
 
         try:
-            point = redeem_response["redeem"].sudo().redeem_for_user(user)
+            result = redeem_response["redeem"].sudo().redeem_for_user(user)
         except ValidationError as error:
             request.env.cr.rollback()
             return json_response(
@@ -55,20 +55,15 @@ class RedeemPointController(http.Controller):
                 status=400,
             )
 
-        return json_response({
-            "point": {
-                "id": point.id,
-                "name": point.name,
-                "value": point.value,
-                "type": point.type,
-                "given_date": fields.Datetime.to_string(point.given_date),
-                "currency": {
-                    "id": point.currency_id.id,
-                    "name": point.currency_id.name,
-                    "is_default": point.currency_id.is_default,
-                },
-            },
-        })
+        response = {}
+        point = result.get("point")
+        user_coupon = result.get("user_coupon")
+        if point:
+            response["point"] = self._serialize_point(point)
+        if user_coupon:
+            response["coupon"] = self._serialize_user_coupon(user_coupon)
+
+        return json_response(response)
 
     def _get_redeem(self, slug, code):
         partner = request.env["partner"].sudo().search(
@@ -109,7 +104,7 @@ class RedeemPointController(http.Controller):
         }
 
     def _serialize_redeem(self, redeem):
-        return {
+        data = {
             "code": redeem.code,
             "name": redeem.name,
             "value": redeem.value,
@@ -123,5 +118,52 @@ class RedeemPointController(http.Controller):
                 "id": redeem.currency_id.id,
                 "name": redeem.currency_id.name,
                 "is_default": redeem.currency_id.is_default,
+            },
+        }
+        if redeem.reward_coupon_id:
+            data["reward_coupon"] = {
+                "id": redeem.reward_coupon_id.id,
+                "name": redeem.reward_coupon_id.name,
+                "image_url": redeem.reward_coupon_id.image or False,
+                "value": redeem.reward_coupon_id.value,
+            }
+        else:
+            data["reward_coupon"] = False
+        return data
+
+    def _serialize_point(self, point):
+        return {
+            "id": point.id,
+            "name": point.name,
+            "value": point.value,
+            "type": point.type,
+            "given_date": fields.Datetime.to_string(point.given_date),
+            "currency": {
+                "id": point.currency_id.id,
+                "name": point.currency_id.name,
+                "is_default": point.currency_id.is_default,
+            },
+        }
+
+    def _serialize_user_coupon(self, coupon):
+        return {
+            "id": coupon.id,
+            "name": coupon.name,
+            "code": coupon.code,
+            "value": coupon.value,
+            "acquired_date": fields.Datetime.to_string(coupon.acquired_date),
+            "expiration_date": fields.Datetime.to_string(coupon.expiration_date),
+            "is_used": coupon.is_used,
+            "used_date": fields.Datetime.to_string(coupon.used_date),
+            "coupon": {
+                "id": coupon.coupon_id.id,
+                "name": coupon.coupon_id.name,
+                "term_and_condition": coupon.coupon_id.term_and_condition,
+                "image_url": coupon.coupon_id.image or False,
+            },
+            "currency": {
+                "id": coupon.currency_id.id,
+                "name": coupon.currency_id.name,
+                "is_default": coupon.currency_id.is_default,
             },
         }

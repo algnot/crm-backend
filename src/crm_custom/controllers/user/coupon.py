@@ -17,6 +17,7 @@ class CouponController(http.Controller):
         now = fields.Datetime.now()
         coupons = request.env["partner.coupon"].sudo().search([
             ("partner_id", "=", partner_response["partner"].id),
+            ("is_show_in_ui", "=", True),
             ("start_time", "<=", now),
             "|",
             ("end_time", "=", False),
@@ -222,6 +223,8 @@ class CouponController(http.Controller):
             "end_time": fields.Datetime.to_string(coupon.end_time),
             "code_expiry_interval": coupon.code_expiry_interval,
             "redeemed_count": coupon.redeemed_count,
+            "is_show_in_ui": coupon.is_show_in_ui,
+            "max_redeem_per_user": coupon.max_redeem_per_user,
             "currency": {
                 "id": coupon.currency_id.id,
                 "name": coupon.currency_id.name,

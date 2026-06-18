@@ -27,7 +27,6 @@ class PortalLoginController(http.Controller):
                 status=400,
             )
 
-        db_name = request.env.cr.dbname
         credential = {
             "login": email,
             "password": password,
@@ -35,7 +34,11 @@ class PortalLoginController(http.Controller):
         }
 
         try:
-            auth_info = request.session.authenticate(db_name, credential)
+            auth_info = request.env["res.users"].sudo().authenticate(
+                request.env.cr.dbname,
+                credential,
+                {"interactive": False},
+            )
         except AccessDenied:
             return json_response(
                 {"error": "invalid_credentials", "message": "Invalid email or password."},
@@ -43,8 +46,8 @@ class PortalLoginController(http.Controller):
             )
 
         user = request.env["res.users"].sudo().browse(auth_info["uid"])
+
         if not user.is_partner_portal or not user.crm_partner_id:
-            request.session.logout(keep_db=True)
             return json_response(
                 {
                     "error": "portal_access_denied",
@@ -55,7 +58,6 @@ class PortalLoginController(http.Controller):
 
         internal_group = request.env.ref("base.group_user")
         if internal_group in user.groups_id:
-            request.session.logout(keep_db=True)
             return json_response(
                 {
                     "error": "portal_access_denied",
@@ -64,7 +66,6 @@ class PortalLoginController(http.Controller):
                 status=403,
             )
 
-        request.session.logout(keep_db=True)
         portal_token = request.env["partner.portal.token"].sudo().create_for_user(user)
         partner = user.crm_partner_id
 

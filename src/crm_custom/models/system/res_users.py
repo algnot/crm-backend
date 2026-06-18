@@ -126,23 +126,53 @@ class ResUsers(models.Model):
 
     @api.model
     def migrate_portal_user_logins(self):
-        for user in self.sudo().search([("is_partner_portal", "=", True)]):
+        portal_users = self.sudo().search([("is_partner_portal", "=", True)])
+        grouped_users = {}
+
+        for user in portal_users:
             partner = user.crm_partner_id
             if not partner or not partner.slug:
                 continue
 
-            email = self._normalize_portal_email(user.email or user.login)
+            email = self._normalize_portal_email(user.email or user._get_portal_email())
             if not email:
                 continue
 
+            grouped_users.setdefault((partner.id, email), []).append(user)
+
+        for (partner_id, email), users in grouped_users.items():
+            partner = self.env["partner"].browse(partner_id)
             scoped_login = self._make_portal_login(partner, email)
-            vals = {}
-            if user.email != email:
-                vals["email"] = email
-            if user.login != scoped_login:
-                vals["login"] = scoped_login
-            if vals:
-                user.write(vals)
+
+            users_sorted = sorted(
+                users,
+                key=lambda record: (
+                    record.login == scoped_login,
+                    record.active,
+                    record.id,
+                ),
+                reverse=True,
+            )
+            primary_user = users_sorted[0]
+            duplicate_users = users_sorted[1:]
+
+            for duplicate_user in duplicate_users:
+                duplicate_login = f"{scoped_login}:archived:{duplicate_user.id}"
+                duplicate_vals = {"email": email}
+                if duplicate_user.login != duplicate_login:
+                    duplicate_vals["login"] = duplicate_login
+                if duplicate_user.active:
+                    duplicate_vals["active"] = False
+                if len(duplicate_vals) > 1 or duplicate_user.active:
+                    duplicate_user.write(duplicate_vals)
+
+            primary_vals = {}
+            if primary_user.email != email:
+                primary_vals["email"] = email
+            if primary_user.login != scoped_login:
+                primary_vals["login"] = scoped_login
+            if primary_vals:
+                primary_user.write(primary_vals)
 
     def _validate_portal_password(self, password):
         self.ensure_one()

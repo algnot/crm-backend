@@ -1,5 +1,6 @@
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
+import re
 
 from odoo import fields, http
 from odoo.http import request
@@ -12,6 +13,9 @@ GRANULARITIES = {
     "week": "week",
     "month": "month",
 }
+THAILAND_TZ = "Asia/Bangkok"
+THAILAND_OFFSET = timedelta(hours=7)
+ODOO_WEEK_PATTERN = re.compile(r"^W(\d+)\s+(\d{4})$")
 
 
 class PortalDashboardController(http.Controller):
@@ -31,8 +35,8 @@ class PortalDashboardController(http.Controller):
         date_to = date_range["date_to"]
 
         return json_response({
-            "date_from": fields.Datetime.to_string(date_from),
-            "date_to": fields.Datetime.to_string(date_to),
+            "date_from": fields.Datetime.to_string(self._to_thailand_time(date_from)),
+            "date_to": fields.Datetime.to_string(self._to_thailand_time(date_to)),
             "granularity": granularity,
             "members_by_tier": self._get_members_by_tier(partner),
             "user_registrations": self._get_user_registrations(partner, date_from, date_to, granularity),
@@ -42,12 +46,40 @@ class PortalDashboardController(http.Controller):
             "points": self._get_points_summary(partner, date_from, date_to, granularity),
         })
 
+    def _thailand_env(self):
+        return request.env(context=dict(request.env.context, tz=THAILAND_TZ))
+
+    def _normalize_datetime(self, value):
+        if not value:
+            return None
+
+        if isinstance(value, datetime):
+            return value.replace(tzinfo=None) if value.tzinfo else value
+
+        if isinstance(value, str):
+            return fields.Datetime.from_string(value)
+
+        if hasattr(value, "year") and hasattr(value, "day"):
+            if hasattr(value, "hour"):
+                return value
+            return datetime.combine(value, time.min)
+
+        return None
+
+    def _to_thailand_time(self, value):
+        utc_dt = self._normalize_datetime(value)
+        if not utc_dt:
+            return None
+
+        thailand_dt = fields.Datetime.context_timestamp(self._thailand_env(), utc_dt)
+        return thailand_dt.replace(tzinfo=None)
+
     def _parse_date_range(self, kwargs):
         now = fields.Datetime.now()
         default_from = now - timedelta(days=30)
 
-        date_from = self._parse_datetime(kwargs.get("date_from"), end_of_day=False) or default_from
-        date_to = self._parse_datetime(kwargs.get("date_to"), end_of_day=True) or now
+        date_from = self._parse_query_datetime(kwargs.get("date_from"), end_of_day=False) or default_from
+        date_to = self._parse_query_datetime(kwargs.get("date_to"), end_of_day=True) or now
 
         if date_from > date_to:
             return None, json_response(
@@ -60,7 +92,7 @@ class PortalDashboardController(http.Controller):
 
         return {"date_from": date_from, "date_to": date_to}, None
 
-    def _parse_datetime(self, value, end_of_day=False):
+    def _parse_query_datetime(self, value, end_of_day=False):
         if not value:
             return None
 
@@ -69,9 +101,15 @@ class PortalDashboardController(http.Controller):
             return None
 
         parsed = fields.Datetime.to_datetime(text)
-        if end_of_day and len(text) <= 10:
-            parsed = parsed.replace(hour=23, minute=59, second=59)
-        return parsed
+        if len(text) <= 10:
+            local_dt = datetime.combine(
+                parsed.date(),
+                time(23, 59, 59) if end_of_day else time.min,
+            )
+        else:
+            local_dt = parsed.replace(tzinfo=None) if parsed.tzinfo else parsed
+
+        return local_dt - THAILAND_OFFSET
 
     def _parse_granularity(self, value):
         granularity = (value or "day").strip().lower()
@@ -115,42 +153,31 @@ class PortalDashboardController(http.Controller):
 
         return results
 
-    def _get_user_registrations(self, partner, date_from, date_to, granularity):
-        user_model = request.env["crm.user"].sudo()
-        domain = [
-            ("partner_id", "=", partner.id),
-            ("create_date", ">=", date_from),
-            ("create_date", "<=", date_to),
-        ]
-        groups = user_model.read_group(
-            domain,
-            ["__count"],
-            [f"create_date:{granularity}"],
-            lazy=False,
-        )
-        return self._serialize_time_series(
-            groups,
-            f"create_date:{granularity}",
-            date_from,
-            date_to,
-            granularity,
-            value_key="count",
-            value_getter=lambda group: group["__count"],
-        )
-
-    def _get_user_registrations_by_hour(self, partner, date_from, date_to):
-        user_model = request.env["crm.user"].sudo()
-        users = user_model.search([
+    def _search_users_in_range(self, partner, date_from, date_to):
+        return request.env["crm.user"].sudo().search([
             ("partner_id", "=", partner.id),
             ("create_date", ">=", date_from),
             ("create_date", "<=", date_to),
         ])
 
-        hour_counts = {hour: 0 for hour in range(24)}
-        for user in users:
-            if not user.create_date:
+    def _get_user_registrations(self, partner, date_from, date_to, granularity):
+        counts = defaultdict(int)
+        for user in self._search_users_in_range(partner, date_from, date_to):
+            thailand_time = self._to_thailand_time(user.create_date)
+            if not thailand_time:
                 continue
-            hour_counts[user.create_date.hour] += 1
+            period = self._period_key_from_thailand_time(thailand_time, granularity)
+            counts[period] += 1
+
+        return self._build_time_series(counts, date_from, date_to, granularity, "count", default=0)
+
+    def _get_user_registrations_by_hour(self, partner, date_from, date_to):
+        hour_counts = {hour: 0 for hour in range(24)}
+        for user in self._search_users_in_range(partner, date_from, date_to):
+            thailand_time = self._to_thailand_time(user.create_date)
+            if not thailand_time:
+                continue
+            hour_counts[thailand_time.hour] += 1
 
         return [
             {"hour": hour, "count": hour_counts[hour]}
@@ -159,28 +186,31 @@ class PortalDashboardController(http.Controller):
 
     def _get_receipt_amounts(self, partner, date_from, date_to, granularity):
         receipt_model = request.env["crm.partner.receipt.redeem"].sudo()
-        domain = [
+        receipts = receipt_model.search([
             ("partner_id", "=", partner.id),
             ("state", "=", "approved"),
             ("reviewed_date", ">=", date_from),
             ("reviewed_date", "<=", date_to),
-        ]
-        groups = receipt_model.read_group(
-            domain,
-            ["amount:sum", "__count"],
-            [f"reviewed_date:{granularity}"],
-            lazy=False,
-        )
-        return self._serialize_time_series(
-            groups,
-            f"reviewed_date:{granularity}",
-            date_from,
-            date_to,
-            granularity,
-            value_key="amount",
-            value_getter=lambda group: group["amount"] or 0.0,
-            extra_getter=lambda group: {"count": group["__count"]},
-        )
+        ])
+
+        amounts = defaultdict(float)
+        counts = defaultdict(int)
+        for receipt in receipts:
+            thailand_time = self._to_thailand_time(receipt.reviewed_date)
+            if not thailand_time:
+                continue
+            period = self._period_key_from_thailand_time(thailand_time, granularity)
+            amounts[period] += receipt.amount or 0.0
+            counts[period] += 1
+
+        results = []
+        for period in self._iter_periods(date_from, date_to, granularity):
+            results.append({
+                "period": period,
+                "amount": amounts.get(period, 0.0),
+                "count": counts.get(period, 0),
+            })
+        return results
 
     def _get_coupons_by_name(self, partner, date_from, date_to):
         coupon_model = request.env["crm.user.coupon"].sudo()
@@ -226,46 +256,37 @@ class PortalDashboardController(http.Controller):
 
     def _get_points_summary(self, partner, date_from, date_to, granularity):
         point_model = request.env["crm.user.point"].sudo()
-        default_currency = partner.currency_ids.filtered("is_default")[:1]
+        point_currencies = partner.currency_ids.filtered(lambda currency: not currency.is_total_spending)
         domain = [
             ("user_id.partner_id", "=", partner.id),
             ("given_date", ">=", date_from),
             ("given_date", "<=", date_to),
         ]
-        if default_currency:
-            domain.append(("currency_id", "=", default_currency.id))
+        if point_currencies:
+            domain.append(("currency_id", "in", point_currencies.ids))
 
-        earned_groups = point_model.read_group(
-            domain + [("type", "=", "earn")],
-            ["value:sum"],
-            [f"given_date:{granularity}"],
-            lazy=False,
-        )
-        used_groups = point_model.read_group(
-            domain + [("type", "=", "burn")],
-            ["value:sum"],
-            [f"given_date:{granularity}"],
-            lazy=False,
-        )
+        points = point_model.search(domain)
+        earned = defaultdict(float)
+        used = defaultdict(float)
+        for point in points:
+            thailand_time = self._to_thailand_time(point.given_date)
+            if not thailand_time:
+                continue
+            period = self._period_key_from_thailand_time(thailand_time, granularity)
+            if point.type == "earn":
+                earned[period] += point.value or 0.0
+            elif point.type == "burn":
+                used[period] += point.value or 0.0
 
-        earned_by_period = {
-            self._normalize_period(group[f"given_date:{granularity}"], granularity): group["value"] or 0.0
-            for group in earned_groups
-        }
-        used_by_period = {
-            self._normalize_period(group[f"given_date:{granularity}"], granularity): group["value"] or 0.0
-            for group in used_groups
-        }
-
-        periods = self._iter_periods(date_from, date_to, granularity)
-        series = [
-            {
+        default_currency = partner.currency_ids.filtered("is_default")[:1]
+        series = []
+        for period in self._iter_periods(date_from, date_to, granularity):
+            series.append({
                 "period": period,
-                "earned": earned_by_period.get(period, 0.0),
-                "used": used_by_period.get(period, 0.0),
-            }
-            for period in periods
-        ]
+                "earned": earned.get(period, 0.0),
+                "used": used.get(period, 0.0),
+            })
+
         return {
             "currency": {
                 "id": default_currency.id,
@@ -274,37 +295,35 @@ class PortalDashboardController(http.Controller):
             "series": series,
         }
 
-    def _serialize_time_series(
-        self,
-        groups,
-        group_field,
-        date_from,
-        date_to,
-        granularity,
-        value_key,
-        value_getter,
-        extra_getter=None,
-    ):
-        values_by_period = {}
-        for group in groups:
-            period = self._normalize_period(group.get(group_field), granularity)
-            if not period:
-                continue
-            item = {value_key: value_getter(group)}
-            if extra_getter:
-                item.update(extra_getter(group))
-            values_by_period[period] = item
+    def _build_time_series(self, values_by_period, date_from, date_to, granularity, value_key, default=0):
+        return [
+            {
+                "period": period,
+                value_key: values_by_period.get(period, default),
+            }
+            for period in self._iter_periods(date_from, date_to, granularity)
+        ]
 
-        results = []
-        for period in self._iter_periods(date_from, date_to, granularity):
-            item = values_by_period.get(period, {value_key: 0 if value_key == "count" else 0.0})
-            results.append({"period": period, **item})
-
-        return results
+    def _period_key_from_thailand_time(self, thailand_time, granularity):
+        if granularity == "month":
+            return thailand_time.strftime("%Y-%m")
+        if granularity == "week":
+            return self._format_week_period(thailand_time.date())
+        return fields.Date.to_string(thailand_time.date())
 
     def _format_week_period(self, value):
         if isinstance(value, str):
-            parsed = fields.Date.to_date(value)
+            text = value.strip()
+            odoo_match = ODOO_WEEK_PATTERN.match(text)
+            if odoo_match:
+                week_num, year = odoo_match.groups()
+                return f"{year}-W{int(week_num):02d}"
+
+            if "-W" in text:
+                year_part, week_part = text.split("-W", 1)
+                return f"{year_part}-W{int(week_part):02d}"
+
+            parsed = fields.Date.to_date(text)
         elif isinstance(value, datetime):
             parsed = value.date()
         elif hasattr(value, "year") and hasattr(value, "month"):
@@ -315,34 +334,13 @@ class PortalDashboardController(http.Controller):
         iso_year, iso_week, _ = parsed.isocalendar()
         return f"{iso_year}-W{iso_week:02d}"
 
-    def _normalize_period(self, value, granularity):
-        if not value:
-            return False
-
-        if granularity == "week":
-            return self._format_week_period(value)
-
-        if isinstance(value, str):
-            if granularity == "month":
-                return value[:7]
-            return value[:10]
-
-        if isinstance(value, datetime):
-            if granularity == "month":
-                return value.strftime("%Y-%m")
-            return value.strftime("%Y-%m-%d")
-
-        if hasattr(value, "year") and hasattr(value, "month"):
-            if granularity == "month":
-                return value.strftime("%Y-%m")
-            return value.strftime("%Y-%m-%d")
-
-        return str(value)
-
     def _iter_periods(self, date_from, date_to, granularity):
+        th_from = self._to_thailand_time(date_from)
+        th_to = self._to_thailand_time(date_to)
+
         if granularity == "month":
-            current = date_from.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            end = date_to.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            current = th_from.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            end = th_to.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             periods = []
             while current <= end:
                 periods.append(current.strftime("%Y-%m"))
@@ -353,8 +351,8 @@ class PortalDashboardController(http.Controller):
             return periods
 
         if granularity == "week":
-            current = date_from.date()
-            end = date_to.date()
+            current = th_from.date()
+            end = th_to.date()
             current -= timedelta(days=current.weekday())
             periods = []
             seen = set()
@@ -366,10 +364,10 @@ class PortalDashboardController(http.Controller):
                 current += timedelta(days=7)
             return periods
 
-        current = date_from.replace(hour=0, minute=0, second=0, microsecond=0)
-        end = date_to.replace(hour=0, minute=0, second=0, microsecond=0)
+        current_date = th_from.date()
+        end_date = th_to.date()
         periods = []
-        while current <= end:
-            periods.append(current.strftime("%Y-%m-%d"))
-            current += timedelta(days=1)
+        while current_date <= end_date:
+            periods.append(fields.Date.to_string(current_date))
+            current_date += timedelta(days=1)
         return periods

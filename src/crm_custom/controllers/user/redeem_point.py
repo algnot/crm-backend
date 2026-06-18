@@ -114,6 +114,8 @@ class RedeemPointController(http.Controller):
             "redeemed_count": redeem.redeemed_count,
             "expiration_date": fields.Datetime.to_string(redeem.expiration_date),
             "active": redeem.active,
+            "redeem_url": redeem.redeem_url or False,
+            "qr_code_url": redeem.get_qr_code_url(),
             "currency": {
                 "id": redeem.currency_id.id,
                 "name": redeem.currency_id.name,

@@ -115,12 +115,23 @@ class PartnerPointRedeem(models.Model):
                 record.qr_code_preview = False
                 continue
 
-            encoded_url = quote(record.redeem_url, safe="")
-            qr_url = f"/report/barcode/QR/{encoded_url}?width=220&height=220"
+            qr_url = record.get_qr_code_url()
             record.qr_code_preview = (
                 f'<img src="{escape(qr_url, quote=True)}" '
                 'style="width:220px;height:220px;" alt="Redeem QR Code"/>'
             )
+
+    def get_qr_code_url(self, width=220, height=220):
+        self.ensure_one()
+        if not self.redeem_url:
+            return False
+
+        base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url")
+        encoded_url = quote(self.redeem_url, safe="")
+        return (
+            f"{base_url}/report/barcode/QR/{encoded_url}"
+            f"?width={width}&height={height}"
+        )
 
     @api.depends("point_ids", "user_coupon_ids")
     def _compute_redeemed_count(self):

@@ -3,3 +3,4 @@ from . import users
 from . import tiers
 from . import coupons
 from . import currencies
+from . import redeem_qrcodes

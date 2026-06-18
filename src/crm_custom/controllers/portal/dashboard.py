@@ -46,9 +46,6 @@ class PortalDashboardController(http.Controller):
             "points": self._get_points_summary(partner, date_from, date_to, granularity),
         })
 
-    def _thailand_env(self):
-        return request.env(context=dict(request.env.context, tz=THAILAND_TZ))
-
     def _normalize_datetime(self, value):
         if not value:
             return None
@@ -71,8 +68,7 @@ class PortalDashboardController(http.Controller):
         if not utc_dt:
             return None
 
-        thailand_dt = fields.Datetime.context_timestamp(self._thailand_env(), utc_dt)
-        return thailand_dt.replace(tzinfo=None)
+        return utc_dt + THAILAND_OFFSET
 
     def _parse_date_range(self, kwargs):
         now = fields.Datetime.now()

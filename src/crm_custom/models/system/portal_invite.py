@@ -61,7 +61,7 @@ class PartnerPortalInvite(models.Model):
 
     @api.depends("token", "partner_id.slug")
     def _compute_invite_url(self):
-        frontend_path = (os.getenv("FRONTEND_PATH") or "").rstrip("/")
+        frontend_path = (os.getenv("PORTAL_FRONTEND_PATH") or "").rstrip("/")
         for record in self:
             if not record.token or not record.partner_id.slug:
                 record.invite_url = False

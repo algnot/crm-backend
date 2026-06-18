@@ -262,9 +262,9 @@ class PartnerCoupon(models.Model):
     def get_codes_export_filename(self):
         self.ensure_one()
         safe_name = "".join(
-            char if char.isalnum() or char in {"-", "_"} else "_"
+            char if char.isascii() and (char.isalnum() or char in {"-", "_"}) else "_"
             for char in (self.name or "coupon")
-        ).strip("_") or "coupon"
+        ).strip("_") or f"coupon_{self.id}"
         return f"{safe_name}_codes.csv"
 
     def action_export_codes(self):

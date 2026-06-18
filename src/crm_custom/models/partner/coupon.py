@@ -233,7 +233,7 @@ class PartnerCoupon(models.Model):
 
         return user_coupon
 
-    def action_export_codes(self):
+    def get_codes_export_csv_content(self):
         self.ensure_one()
 
         output = io.StringIO()
@@ -257,9 +257,22 @@ class PartnerCoupon(models.Model):
                 fields.Datetime.to_string(coupon_code.used_date) if coupon_code.used_date else "",
             ])
 
+        return output.getvalue()
+
+    def get_codes_export_filename(self):
+        self.ensure_one()
+        safe_name = "".join(
+            char if char.isalnum() or char in {"-", "_"} else "_"
+            for char in (self.name or "coupon")
+        ).strip("_") or "coupon"
+        return f"{safe_name}_codes.csv"
+
+    def action_export_codes(self):
+        self.ensure_one()
+
         attachment = self.env["ir.attachment"].sudo().create({
-            "name": f"{self.name}_codes.csv",
-            "datas": base64.b64encode(output.getvalue().encode("utf-8")),
+            "name": self.get_codes_export_filename(),
+            "datas": base64.b64encode(self.get_codes_export_csv_content().encode("utf-8")),
             "mimetype": "text/csv",
             "res_model": self._name,
             "res_id": self.id,
@@ -272,8 +285,12 @@ class PartnerCoupon(models.Model):
         }
 
     @api.model
+    def get_import_template_csv_content(self):
+        return "code\nEXAMPLE001\nEXAMPLE002\n"
+
+    @api.model
     def action_download_import_template(self):
-        csv_content = "code\nEXAMPLE001\nEXAMPLE002\n"
+        csv_content = self.get_import_template_csv_content()
         attachment = self.env["ir.attachment"].sudo().create({
             "name": "coupon_code_import_template.csv",
             "datas": base64.b64encode(csv_content.encode("utf-8")),
@@ -284,6 +301,40 @@ class PartnerCoupon(models.Model):
             "url": f"/web/content/{attachment.id}?download=true",
             "target": "self",
         }
+
+    def add_codes(self, add_source, code_quantity=1, prefix_code=None, random_range=None,
+                  suffix_code=None, import_file=None, import_filename=None):
+        self.ensure_one()
+
+        if add_source == "generate":
+            self._validate_code_batch_size(code_quantity)
+            effective_random_range = random_range or self.random_range
+            if effective_random_range is None:
+                effective_random_range = max(self.locked_random_range or 0, 6)
+
+            effective_prefix = (
+                (prefix_code or self.prefix_code)
+                if prefix_code is not None
+                else self.prefix_code
+            )
+            effective_suffix = (
+                (suffix_code or self.suffix_code)
+                if suffix_code is not None
+                else self.suffix_code
+            )
+            self.write({
+                "prefix_code": effective_prefix,
+                "suffix_code": effective_suffix,
+            })
+            self.create_generated_codes(code_quantity, effective_random_range)
+            return code_quantity
+
+        if not import_file:
+            raise ValidationError("กรุณาอัปโหลดไฟล์ CSV")
+
+        before_count = len(self.coupon_code_ids)
+        self.import_codes_from_file(import_file, import_filename)
+        return len(self.coupon_code_ids) - before_count
 
     @api.model
     def _validate_code_batch_size(self, count):

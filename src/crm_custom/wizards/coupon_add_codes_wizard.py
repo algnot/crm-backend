@@ -1,5 +1,4 @@
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
 
 from ..models.partner.coupon import MAX_CODE_BATCH_SIZE
 
@@ -58,18 +57,15 @@ class PartnerCouponAddCodesWizard(models.TransientModel):
         self.ensure_one()
         coupon = self.coupon_id
 
-        if self.add_source == "generate":
-            self.env["partner.coupon"]._validate_code_batch_size(self.code_quantity)
-            random_range = self.random_range or coupon.random_range
-            coupon.write({
-                "prefix_code": self.prefix_code or coupon.prefix_code,
-                "suffix_code": self.suffix_code or coupon.suffix_code,
-            })
-            coupon.create_generated_codes(self.code_quantity, random_range)
-        else:
-            if not self.import_file:
-                raise ValidationError("กรุณาอัปโหลดไฟล์ CSV")
-            coupon.import_codes_from_file(self.import_file, self.import_filename)
+        coupon.add_codes(
+            add_source=self.add_source,
+            code_quantity=self.code_quantity,
+            prefix_code=self.prefix_code,
+            random_range=self.random_range,
+            suffix_code=self.suffix_code,
+            import_file=self.import_file,
+            import_filename=self.import_filename,
+        )
 
         return {
             "type": "ir.actions.act_window",

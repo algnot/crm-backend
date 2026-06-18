@@ -6,7 +6,7 @@ from odoo.http import request
 from psycopg2 import IntegrityError
 
 from ....util.portal_auth import get_portal_user_from_request
-from ....util.request import json_response
+from ....util.request import csv_response, json_response
 
 MAX_CODE_BATCH_SIZE = 2000
 
@@ -248,6 +248,111 @@ class PortalCouponsController(http.Controller):
         return json_response({
             "coupon": self._serialize_coupon(coupon_response["coupon"]),
         })
+
+    @http.route(
+        "/api/portal/coupons/codes/import-template",
+        type="http",
+        auth="public",
+        methods=["GET"],
+        csrf=False,
+        cors="*",
+    )
+    def download_coupon_codes_import_template(self, **kwargs):
+        user = get_portal_user_from_request()
+        if not user:
+            return json_response(
+                {"error": "unauthorized", "message": "Invalid or expired token."},
+                status=401,
+            )
+
+        csv_content = request.env["partner.coupon"].get_import_template_csv_content()
+        return csv_response(csv_content, "coupon_code_import_template.csv")
+
+    @http.route(
+        "/api/portal/coupons/<int:coupon_id>/codes",
+        type="http",
+        auth="public",
+        methods=["POST"],
+        csrf=False,
+        cors="*",
+    )
+    def add_coupon_codes(self, coupon_id, **kwargs):
+        user = get_portal_user_from_request()
+        if not user:
+            return json_response(
+                {"error": "unauthorized", "message": "Invalid or expired token."},
+                status=401,
+            )
+
+        coupon_response = self._get_coupon(user.crm_partner_id, coupon_id)
+        if coupon_response["error"]:
+            return coupon_response["error"]
+
+        payload, parse_error = self._parse_payload()
+        if parse_error:
+            return parse_error
+
+        add_source = payload.get("add_source", "generate")
+        if add_source not in {"generate", "import"}:
+            return json_response(
+                {"error": "invalid_request", "message": "add_source ต้องเป็น generate หรือ import"},
+                status=400,
+            )
+
+        coupon = coupon_response["coupon"]
+        try:
+            added_count = coupon.sudo().add_codes(
+                add_source=add_source,
+                code_quantity=self._parse_int(payload.get("code_quantity")) or 1,
+                prefix_code=payload.get("prefix_code"),
+                random_range=self._parse_int(payload.get("random_range")),
+                suffix_code=payload.get("suffix_code"),
+                import_file=payload.get("import_file"),
+                import_filename=payload.get("import_filename"),
+            )
+        except ValidationError as error:
+            request.env.cr.rollback()
+            return json_response(
+                {"error": "coupon_not_allowed", "message": str(error)},
+                status=400,
+            )
+        except IntegrityError:
+            request.env.cr.rollback()
+            return json_response(
+                {"error": "coupon_not_allowed", "message": "ข้อมูล Coupon Code ไม่ถูกต้อง"},
+                status=400,
+            )
+
+        return json_response({
+            "coupon": self._serialize_coupon(coupon),
+            "added_code_count": added_count,
+        })
+
+    @http.route(
+        "/api/portal/coupons/<int:coupon_id>/codes/export",
+        type="http",
+        auth="public",
+        methods=["GET"],
+        csrf=False,
+        cors="*",
+    )
+    def export_coupon_codes(self, coupon_id, **kwargs):
+        user = get_portal_user_from_request()
+        if not user:
+            return json_response(
+                {"error": "unauthorized", "message": "Invalid or expired token."},
+                status=401,
+            )
+
+        coupon_response = self._get_coupon(user.crm_partner_id, coupon_id)
+        if coupon_response["error"]:
+            return coupon_response["error"]
+
+        coupon = coupon_response["coupon"]
+        return csv_response(
+            coupon.get_codes_export_csv_content(),
+            coupon.get_codes_export_filename(),
+        )
 
     def _parse_payload(self):
         try:

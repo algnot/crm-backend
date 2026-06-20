@@ -1,3 +1,6 @@
+import hashlib
+import secrets
+
 from odoo import api, fields, models
 from odoo.exceptions import AccessDenied, ValidationError
 
@@ -24,6 +27,89 @@ class ResUsers(models.Model):
         string="Portal Role",
         default=PORTAL_ROLE_ADMIN,
     )
+    api_key = fields.Char(string="API Key Hash", copy=False)
+    api_key_enabled = fields.Boolean(string="API Key Enabled", default=False, copy=False)
+    has_api_key = fields.Boolean(string="Has API Key", compute="_compute_has_api_key")
+
+    @api.depends("api_key")
+    def _compute_has_api_key(self):
+        for user in self:
+            user.has_api_key = bool(user.api_key)
+
+    @api.model
+    def _hash_portal_api_key(self, api_key):
+        return hashlib.sha256((api_key or "").encode()).hexdigest()
+
+    @api.model
+    def _generate_portal_api_key_value(self):
+        return secrets.token_urlsafe(32)
+
+    @api.model
+    def get_user_from_api_key(self, api_key):
+        if not api_key:
+            return self.env["res.users"]
+
+        key_hash = self._hash_portal_api_key(api_key)
+        user = self.sudo().search([
+            ("is_partner_portal", "=", True),
+            ("api_key", "=", key_hash),
+            ("api_key_enabled", "=", True),
+            ("active", "=", True),
+        ], limit=1)
+        if not user or not user.crm_partner_id:
+            return self.env["res.users"]
+
+        return user
+
+    def _open_portal_api_key_wizard(self, plain_key):
+        self.ensure_one()
+        wizard = self.env["partner.portal.api.key.wizard"].create({
+            "user_id": self.id,
+            "api_key": plain_key,
+        })
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Portal API Key",
+            "res_model": "partner.portal.api.key.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "res_id": wizard.id,
+        }
+
+    def action_generate_portal_api_key(self):
+        self.ensure_one()
+        self._ensure_portal_user()
+        if self.api_key:
+            raise ValidationError("API key already exists. Use Rotate API Key instead.")
+
+        plain_key = self._generate_portal_api_key_value()
+        self.write({
+            "api_key": self._hash_portal_api_key(plain_key),
+            "api_key_enabled": True,
+        })
+        return self._open_portal_api_key_wizard(plain_key)
+
+    def action_rotate_portal_api_key(self):
+        self.ensure_one()
+        self._ensure_portal_user()
+        if not self.api_key:
+            raise ValidationError("No API key to rotate. Generate one first.")
+
+        plain_key = self._generate_portal_api_key_value()
+        self.write({"api_key": self._hash_portal_api_key(plain_key)})
+        return self._open_portal_api_key_wizard(plain_key)
+
+    def action_enable_portal_api_key(self):
+        self.ensure_one()
+        self._ensure_portal_user()
+        if not self.api_key:
+            raise ValidationError("Generate an API key first.")
+        self.write({"api_key_enabled": True})
+
+    def action_disable_portal_api_key(self):
+        self.ensure_one()
+        self._ensure_portal_user()
+        self.write({"api_key_enabled": False})
 
     @api.model
     def _normalize_portal_email(self, email):

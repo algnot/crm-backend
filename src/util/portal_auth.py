@@ -14,12 +14,20 @@ def get_bearer_token():
     return False
 
 
+def get_api_key_from_request():
+    return (request.httprequest.headers.get("X-api-key") or "").strip() or False
+
+
 def get_portal_user_from_request():
     token = get_bearer_token()
-    if not token:
-        return request.env["res.users"]
+    if token:
+        return request.env["partner.portal.token"].sudo().get_user_from_token(token)
 
-    return request.env["partner.portal.token"].sudo().get_user_from_token(token)
+    api_key = get_api_key_from_request()
+    if api_key:
+        return request.env["res.users"].sudo().get_user_from_api_key(api_key)
+
+    return request.env["res.users"]
 
 
 def get_portal_role(user):

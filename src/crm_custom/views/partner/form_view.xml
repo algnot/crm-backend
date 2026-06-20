@@ -226,12 +226,19 @@
 
                         <page string="Portal Users" name="portal_users">
                             <field name="portal_user_ids" nolabel="1">
-                                <list create="0" delete="0" edit="0">
+                                <list create="0" delete="0">
                                     <field name="name"/>
                                     <field name="email" string="Email"/>
+                                    <field name="portal_role"/>
                                     <field name="login" column_invisible="1"/>
-                                    <field name="active" widget="boolean_toggle"/>
+                                    <field name="active" widget="boolean"/>
+                                    <field name="api_key_enabled" widget="boolean"/>
+                                    <field name="has_api_key" column_invisible="1"/>
                                     <field name="is_partner_portal" column_invisible="1"/>
+                                    <button name="action_generate_portal_api_key" type="object" string="Generate API Key" icon="fa-key" invisible="has_api_key"/>
+                                    <button name="action_rotate_portal_api_key" type="object" string="Rotate API Key" icon="fa-refresh" invisible="not has_api_key"/>
+                                    <button name="action_enable_portal_api_key" type="object" string="Enable API Key" icon="fa-toggle-off" invisible="not has_api_key or api_key_enabled"/>
+                                    <button name="action_disable_portal_api_key" type="object" string="Disable API Key" icon="fa-toggle-on" invisible="not has_api_key or not api_key_enabled"/>
                                 </list>
                             </field>
                         </page>

@@ -61,7 +61,7 @@ class SubmitEmailController(http.Controller):
             "is_email_verified": False,
         })
 
-        otp = request.env["crm.otp"].sudo().generate_otp("email", "verified_email", str(user.id))
+        otp = request.env["crm.otp"].sudo().generate_otp(email, "email", "verified_email", str(user.id), partner)
 
         return json_response({
             "ref": otp.ref

@@ -61,7 +61,7 @@ class SubmitPhoneController(http.Controller):
             "is_phone_verified": False,
         })
 
-        otp = request.env["crm.otp"].sudo().generate_otp("phone", "verified_phone", str(user.id))
+        otp = request.env["crm.otp"].sudo().generate_otp(phone, "phone", "verified_phone", str(user.id), partner)
 
         return json_response({
             "ref": otp.ref

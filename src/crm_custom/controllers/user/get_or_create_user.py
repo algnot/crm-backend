@@ -67,6 +67,10 @@ class GetOrCreateUserController(http.Controller):
         force_verify_phone = not user.is_phone_verified and partner.ui_crm_required_phone
         force_verify_email = not user.is_email_verified and partner.ui_crm_required_email
 
+        has_sms_credit = request.env["crm.otp"].has_sms_otp_credit()
+        if not has_sms_credit:
+            force_verify_phone = False
+
         return {
             "display_name": user.display_name,
             "picture_url": user.picture_url,

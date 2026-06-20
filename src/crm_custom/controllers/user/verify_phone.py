@@ -33,7 +33,7 @@ class VerifyPhoneController(http.Controller):
                 status=400,
             )
 
-        if record.otp != otp:
+        if not record.verify_sms_otp(otp):
             return json_response(
                 {"error": "invalid_otp", "message": "รหัส OTP ไม่ถูกต้อง"},
                 status=400,

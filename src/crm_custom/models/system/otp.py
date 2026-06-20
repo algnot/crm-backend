@@ -63,10 +63,13 @@ class OTP(models.Model):
                 })
 
         elif otp_type == "email":
-            otp.write({
-                "otp": f"{secrets.randbelow(1000000):06d}",
-                "ref": "".join(secrets.choice(self._REF_ALPHABET) for _ in range(5)),
+            otp_code = f"{secrets.randbelow(1000000):06d}"
+            otp_ref = "".join(secrets.choice(self._REF_ALPHABET) for _ in range(5))
+            otp = otp.write({
+                "otp": otp_code,
+                "ref": otp_ref,
             })
+            otp.send_email_otp()
 
         return otp
 
@@ -110,6 +113,46 @@ class OTP(models.Model):
             "reason": reason,
             "is_sent": True
         })
+
+    def send_email_otp(self):
+        base_url = os.getenv("EMAIL_API_ENDPOINT", False)
+        if not base_url:
+            self.make_as_fail("EMAIL_API_ENDPOINT not configured.")
+            return False
+
+        api_token = os.getenv("EMAIL_API_TOKEN", False)
+        if not api_token:
+            self.make_as_fail("EMAIL_API_TOKEN not configured.")
+            return False
+
+        url = f"{base_url}/emails"
+
+        payload = {
+            "to": self.recipient,
+            "template": {
+                "id": "7bcb7701-6418-44b2-a79f-fb4665ddf8f2",
+                "variables": {
+                    "PARTNER_NAME": self.partner_id.name,
+                    "OTP_REF": self.ref,
+                    "OTP_CODE": self.otp,
+                }
+            }
+        }
+        headers = {
+            "authorization": f"Bearer {api_token}",
+            "content-type": "application/json"
+        }
+
+        response = requests.post(url, json=payload, headers=headers)
+
+        if response.status_code != 200:
+            self.make_as_fail(f"failed to send email otp: {response.text}")
+            return False
+
+        self.make_as_send(response.text)
+        return {
+            "id": response.json().get("id", False),
+        }
 
     def send_sms_otp(self):
         base_url = os.getenv("SMS_API_ENDPOINT", False)

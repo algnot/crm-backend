@@ -119,7 +119,7 @@ class PortalTeamController(http.Controller):
         if parse_error:
             return parse_error
 
-        team_user = request.env["res.users"].sudo().search([
+        team_user = request.env["res.users"].sudo().with_context(active_test=False).search([
             ("id", "=", user_id),
             ("is_partner_portal", "=", True),
             ("crm_partner_id", "=", portal_user.crm_partner_id.id),

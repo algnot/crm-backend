@@ -65,7 +65,7 @@ class OTP(models.Model):
         elif otp_type == "email":
             otp_code = f"{secrets.randbelow(1000000):06d}"
             otp_ref = "".join(secrets.choice(self._REF_ALPHABET) for _ in range(5))
-            otp = otp.write({
+            otp.write({
                 "otp": otp_code,
                 "ref": otp_ref,
             })

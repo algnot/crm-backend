@@ -128,6 +128,7 @@ class OTP(models.Model):
         url = f"{base_url}/emails"
 
         payload = {
+            "from": "BOPP <no-reply@bopp.digital>",
             "to": self.recipient,
             "template": {
                 "id": "7bcb7701-6418-44b2-a79f-fb4665ddf8f2",

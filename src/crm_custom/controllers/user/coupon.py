@@ -4,6 +4,7 @@ from odoo import fields, http
 from odoo.exceptions import ValidationError
 from odoo.http import request
 
+from ....util.line_auth import get_line_profile_from_request
 from ....util.request import json_response
 
 
@@ -40,6 +41,10 @@ class CouponController(http.Controller):
 
     @http.route("/api/partner/<string:slug>/coupon/<int:coupon_id>/redeem", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
     def redeem_coupon(self, slug, coupon_id, **kwargs):
+        line_profile, auth_error = get_line_profile_from_request()
+        if auth_error:
+            return auth_error
+
         try:
             payload = json.loads(request.httprequest.get_data(as_text=True) or "{}")
         except json.JSONDecodeError:
@@ -52,10 +57,7 @@ class CouponController(http.Controller):
         if coupon_response["error"]:
             return coupon_response["error"]
 
-        user_response = self._get_user(
-            coupon_response["partner"],
-            payload.get("userId") or payload.get("line_user_id"),
-        )
+        user_response = self._get_user(coupon_response["partner"], line_profile["userId"])
         if user_response["error"]:
             return user_response["error"]
 
@@ -72,13 +74,17 @@ class CouponController(http.Controller):
             "coupon": self._serialize_user_coupon(user_coupon),
         })
 
-    @http.route("/api/partner/<string:slug>/user/<string:user_id>/coupon", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
-    def get_user_coupon(self, slug, user_id, **kwargs):
+    @http.route("/api/partner/<string:slug>/user/coupon", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
+    def get_user_coupon(self, slug, **kwargs):
+        line_profile, auth_error = get_line_profile_from_request()
+        if auth_error:
+            return auth_error
+
         partner_response = self._get_partner(slug)
         if partner_response["error"]:
             return partner_response["error"]
 
-        user_response = self._get_user(partner_response["partner"], user_id)
+        user_response = self._get_user(partner_response["partner"], line_profile["userId"])
         if user_response["error"]:
             return user_response["error"]
 
@@ -90,13 +96,17 @@ class CouponController(http.Controller):
             "coupon": [self._serialize_user_coupon(coupon) for coupon in coupons],
         })
 
-    @http.route("/api/partner/<string:slug>/user/<string:user_id>/coupon/<string:coupon_id>", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
-    def get_user_coupon_by_id(self, slug, user_id, coupon_id, **kwargs):
+    @http.route("/api/partner/<string:slug>/user/coupon/<string:coupon_id>", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
+    def get_user_coupon_by_id(self, slug, coupon_id, **kwargs):
+        line_profile, auth_error = get_line_profile_from_request()
+        if auth_error:
+            return auth_error
+
         partner_response = self._get_partner(slug)
         if partner_response["error"]:
             return partner_response["error"]
 
-        user_response = self._get_user(partner_response["partner"], user_id)
+        user_response = self._get_user(partner_response["partner"], line_profile["userId"])
         if user_response["error"]:
             return user_response["error"]
 
@@ -114,13 +124,17 @@ class CouponController(http.Controller):
             "coupon": self._serialize_user_coupon(coupon),
         })
 
-    @http.route("/api/partner/<string:slug>/user/<string:user_id>/coupon/<string:code>/use", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
-    def use_user_coupon(self, slug, user_id, code, **kwargs):
+    @http.route("/api/partner/<string:slug>/user/coupon/<string:code>/use", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
+    def use_user_coupon(self, slug, code, **kwargs):
+        line_profile, auth_error = get_line_profile_from_request()
+        if auth_error:
+            return auth_error
+
         partner_response = self._get_partner(slug)
         if partner_response["error"]:
             return partner_response["error"]
 
-        user_response = self._get_user(partner_response["partner"], user_id)
+        user_response = self._get_user(partner_response["partner"], line_profile["userId"])
         if user_response["error"]:
             return user_response["error"]
 

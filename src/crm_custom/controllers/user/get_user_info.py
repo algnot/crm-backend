@@ -1,21 +1,16 @@
-import json
-
-from odoo import http
+from odoo import fields, http
 from odoo.http import request
 from ....util.request import json_response
+from ....util.line_auth import get_line_profile_from_request
 
 
 class GetOrCreateUserController(http.Controller):
 
-    @http.route("/api/partner/<string:slug>/user", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
-    def get_or_create_user(self, slug, **kwargs):
-        try:
-            payload = json.loads(request.httprequest.get_data(as_text=True) or "{}")
-        except json.JSONDecodeError:
-            return json_response(
-                {"error": "invalid_json", "message": "Invalid JSON body."},
-                status=400,
-            )
+    @http.route("/api/partner/<string:slug>/user", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
+    def get_user_info(self, slug, **kwargs):
+        line_profile, auth_error = get_line_profile_from_request()
+        if auth_error:
+            return auth_error
 
         partner = request.env["partner"].sudo().search(
             [
@@ -33,9 +28,9 @@ class GetOrCreateUserController(http.Controller):
                 status=404,
             )
 
-        display_name = payload.get("displayName")
-        picture_url = payload.get("pictureUrl")
-        user_id = payload.get("userId")
+        display_name = line_profile.get("displayName")
+        picture_url = line_profile.get("pictureUrl")
+        user_id = line_profile.get("userId")
         user = request.env["crm.user"].search(
             [
                 ("line_user_id", "=", user_id),
@@ -79,7 +74,7 @@ class GetOrCreateUserController(http.Controller):
             "phone": user.phone,
             "force_verify_phone": force_verify_phone,
             "force_verify_email": force_verify_email,
-            "birth_date": user.birth_date,
+            "birth_date": fields.Date.to_string(user.birth_date) if user.birth_date else False,
             "gender": user.gender,
             "tier": self._serialize_user_tier(user.tier_id),
         }

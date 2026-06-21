@@ -110,11 +110,13 @@ class UserCoupon(models.Model):
         )
         self._cr.execute(
             """
-            UPDATE crm_user_coupon
-               SET state = 'activated'
-             WHERE is_used IS FALSE
-               AND expiration_date IS NOT NULL
-               AND state = 'redeemed'
+            UPDATE crm_user_coupon uc
+               SET expiration_date = pc.end_time
+              FROM partner_coupon pc
+             WHERE uc.coupon_id = pc.id
+               AND uc.state = 'redeemed'
+               AND uc.expiration_date IS NULL
+               AND pc.end_time IS NOT NULL
             """
         )
 
@@ -125,6 +127,10 @@ class UserCoupon(models.Model):
                 raise ValidationError("Coupon ถูกใช้แล้ว")
             if record.state == "activated":
                 continue
+
+            pre_activation_expiration = record.expiration_date or record.coupon_id.end_time
+            if pre_activation_expiration and now > pre_activation_expiration:
+                raise ValidationError("Coupon หมดอายุแล้ว")
 
             expiration_date = False
             if record.coupon_id.code_expiry_interval:

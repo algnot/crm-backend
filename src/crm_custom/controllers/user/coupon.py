@@ -4,6 +4,7 @@ from odoo import fields, http
 from odoo.exceptions import ValidationError
 from odoo.http import request
 
+from ....util.datetime import to_thailand_string
 from ....util.line_auth import get_line_profile_from_request
 from ....util.request import json_response
 
@@ -271,8 +272,8 @@ class CouponController(http.Controller):
             "image_url": coupon.image or False,
             "value": coupon.value,
             "term_and_condition": coupon.term_and_condition,
-            "start_time": fields.Datetime.to_string(coupon.start_time),
-            "end_time": fields.Datetime.to_string(coupon.end_time),
+            "start_time": to_thailand_string(coupon.start_time),
+            "end_time": to_thailand_string(coupon.end_time),
             "code_expiry_interval": coupon.code_expiry_interval,
             "redeemed_count": coupon.redeemed_count,
             "is_show_in_ui": coupon.is_show_in_ui,
@@ -290,12 +291,12 @@ class CouponController(http.Controller):
             "name": coupon.name,
             "code": coupon.code,
             "value": coupon.value,
-            "acquired_date": fields.Datetime.to_string(coupon.acquired_date),
-            "activated_date": fields.Datetime.to_string(coupon.activated_date) if coupon.activated_date else False,
-            "expiration_date": fields.Datetime.to_string(coupon.expiration_date) if coupon.expiration_date else False,
+            "acquired_date": to_thailand_string(coupon.acquired_date),
+            "activated_date": to_thailand_string(coupon.activated_date),
+            "expiration_date": to_thailand_string(coupon.expiration_date),
             "state": coupon.state,
             "is_used": coupon.is_used,
-            "used_date": fields.Datetime.to_string(coupon.used_date) if coupon.used_date else False,
+            "used_date": to_thailand_string(coupon.used_date),
             "coupon": {
                 "id": coupon.coupon_id.id,
                 "name": coupon.coupon_id.name,

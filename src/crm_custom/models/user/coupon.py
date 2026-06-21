@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
@@ -16,7 +18,19 @@ class UserCoupon(models.Model):
     code = fields.Char(string="Code", required=True, readonly=True, copy=False, tracking=True)
     value = fields.Float(string="Value", required=True, readonly=True, tracking=True)
     acquired_date = fields.Datetime(string="Acquired Date", required=True, readonly=True, tracking=True)
+    activated_date = fields.Datetime(string="Activated Date", readonly=True, tracking=True)
     expiration_date = fields.Datetime(string="Expiration Date", readonly=True, tracking=True)
+    state = fields.Selection(
+        [
+            ("redeemed", "Redeemed"),
+            ("activated", "Activated"),
+            ("used", "Used"),
+        ],
+        string="State",
+        default="redeemed",
+        required=True,
+        tracking=True,
+    )
     is_used = fields.Boolean(string="Used", default=False, tracking=True)
     used_date = fields.Datetime(string="Used Date", readonly=True, tracking=True)
 
@@ -84,14 +98,55 @@ class UserCoupon(models.Model):
         ondelete="set null",
     )
 
+    def init(self):
+        super().init()
+        self._cr.execute(
+            """
+            UPDATE crm_user_coupon
+               SET state = 'used'
+             WHERE is_used IS TRUE
+               AND state = 'redeemed'
+            """
+        )
+        self._cr.execute(
+            """
+            UPDATE crm_user_coupon
+               SET state = 'activated'
+             WHERE is_used IS FALSE
+               AND expiration_date IS NOT NULL
+               AND state = 'redeemed'
+            """
+        )
+
+    def action_activate(self):
+        now = fields.Datetime.now()
+        for record in self:
+            if record.state == "used" or record.is_used:
+                raise ValidationError("Coupon ถูกใช้แล้ว")
+            if record.state == "activated":
+                continue
+
+            expiration_date = False
+            if record.coupon_id.code_expiry_interval:
+                expiration_date = now + timedelta(minutes=record.coupon_id.code_expiry_interval)
+
+            record.write({
+                "state": "activated",
+                "activated_date": now,
+                "expiration_date": expiration_date,
+            })
+
     def action_mark_used(self):
         now = fields.Datetime.now()
         for record in self:
             if record.is_used:
                 continue
+            if record.state != "activated":
+                raise ValidationError("กรุณาเปิดใช้งานคูปองก่อน")
             if record.expiration_date and now > record.expiration_date:
                 raise ValidationError("Coupon หมดอายุแล้ว")
             record.write({
+                "state": "used",
                 "is_used": True,
                 "used_date": now,
             })

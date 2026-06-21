@@ -149,9 +149,6 @@ class PartnerCoupon(models.Model):
             raise ValidationError("คูปองหมดแล้ว")
 
         now = fields.Datetime.now()
-        expiration_date = False
-        if self.code_expiry_interval:
-            expiration_date = now + timedelta(minutes=self.code_expiry_interval)
 
         point = self.env["crm.user.point"].sudo().create({
             "name": f"Redeem coupon: {self.name}",
@@ -167,7 +164,6 @@ class PartnerCoupon(models.Model):
             "code": coupon_code.code,
             "value": self.value,
             "acquired_date": now,
-            "expiration_date": expiration_date,
             "currency_id": self.currency_id.id,
             "partner_id": self.partner_id.id,
             "coupon_id": self.id,
@@ -205,9 +201,6 @@ class PartnerCoupon(models.Model):
             raise ValidationError("คูปองหมดแล้ว")
 
         now = fields.Datetime.now()
-        expiration_date = False
-        if self.code_expiry_interval:
-            expiration_date = now + timedelta(minutes=self.code_expiry_interval)
 
         user_coupon = self.env["crm.user.coupon"].sudo().create({
             "name": self.name,
@@ -215,7 +208,6 @@ class PartnerCoupon(models.Model):
             "code": coupon_code.code,
             "value": self.value,
             "acquired_date": now,
-            "expiration_date": expiration_date,
             "currency_id": self.currency_id.id,
             "partner_id": self.partner_id.id,
             "coupon_id": self.id,

@@ -478,7 +478,9 @@ class PortalCouponsController(http.Controller):
             "code": user_coupon.code,
             "value": user_coupon.value,
             "acquired_date": fields.Datetime.to_string(user_coupon.acquired_date),
+            "activated_date": fields.Datetime.to_string(user_coupon.activated_date) if user_coupon.activated_date else False,
             "expiration_date": fields.Datetime.to_string(user_coupon.expiration_date) if user_coupon.expiration_date else False,
+            "state": user_coupon.state,
             "is_used": user_coupon.is_used,
             "used_date": fields.Datetime.to_string(user_coupon.used_date) if user_coupon.used_date else False,
             "user": {

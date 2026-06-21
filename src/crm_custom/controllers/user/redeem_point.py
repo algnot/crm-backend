@@ -154,9 +154,11 @@ class RedeemPointController(http.Controller):
             "code": coupon.code,
             "value": coupon.value,
             "acquired_date": fields.Datetime.to_string(coupon.acquired_date),
-            "expiration_date": fields.Datetime.to_string(coupon.expiration_date),
+            "activated_date": fields.Datetime.to_string(coupon.activated_date) if coupon.activated_date else False,
+            "expiration_date": fields.Datetime.to_string(coupon.expiration_date) if coupon.expiration_date else False,
+            "state": coupon.state,
             "is_used": coupon.is_used,
-            "used_date": fields.Datetime.to_string(coupon.used_date),
+            "used_date": fields.Datetime.to_string(coupon.used_date) if coupon.used_date else False,
             "coupon": {
                 "id": coupon.coupon_id.id,
                 "name": coupon.coupon_id.name,

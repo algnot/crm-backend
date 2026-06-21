@@ -56,9 +56,11 @@
                             <field name="currency_id" readonly="1"/>
                             <field name="value" readonly="1"/>
                             <field name="is_used" readonly="1"/>
+                            <field name="state" readonly="1"/>
                         </group>
                         <group string="Dates">
                             <field name="acquired_date" readonly="1"/>
+                            <field name="activated_date" readonly="1"/>
                             <field name="expiration_date" readonly="1"/>
                             <field name="used_date" readonly="1" invisible="not is_used"/>
                         </group>

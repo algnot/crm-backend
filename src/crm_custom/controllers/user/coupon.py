@@ -124,6 +124,44 @@ class CouponController(http.Controller):
             "coupon": self._serialize_user_coupon(coupon),
         })
 
+    @http.route("/api/partner/<string:slug>/user/coupon/<string:code>/activate", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
+    def activate_user_coupon(self, slug, code, **kwargs):
+        line_profile, auth_error = get_line_profile_from_request()
+        if auth_error:
+            return auth_error
+
+        partner_response = self._get_partner(slug)
+        if partner_response["error"]:
+            return partner_response["error"]
+
+        user_response = self._get_user(partner_response["partner"], line_profile["userId"])
+        if user_response["error"]:
+            return user_response["error"]
+
+        user_coupon = request.env["crm.user.coupon"].sudo().search([
+            ("partner_id", "=", partner_response["partner"].id),
+            ("user_id", "=", user_response["user"].id),
+            ("code", "=", code),
+        ], limit=1)
+        if not user_coupon:
+            return json_response(
+                {"error": "coupon_not_found", "message": "ไม่พบ coupon ดังกล่าว"},
+                status=404,
+            )
+
+        try:
+            user_coupon.action_activate()
+        except ValidationError as error:
+            request.env.cr.rollback()
+            return json_response(
+                {"error": "coupon_not_allowed", "message": str(error)},
+                status=400,
+            )
+
+        return json_response({
+            "coupon": self._serialize_user_coupon(user_coupon),
+        })
+
     @http.route("/api/partner/<string:slug>/user/coupon/<string:code>/use", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
     def use_user_coupon(self, slug, code, **kwargs):
         line_profile, auth_error = get_line_profile_from_request()
@@ -253,9 +291,11 @@ class CouponController(http.Controller):
             "code": coupon.code,
             "value": coupon.value,
             "acquired_date": fields.Datetime.to_string(coupon.acquired_date),
-            "expiration_date": fields.Datetime.to_string(coupon.expiration_date),
+            "activated_date": fields.Datetime.to_string(coupon.activated_date) if coupon.activated_date else False,
+            "expiration_date": fields.Datetime.to_string(coupon.expiration_date) if coupon.expiration_date else False,
+            "state": coupon.state,
             "is_used": coupon.is_used,
-            "used_date": fields.Datetime.to_string(coupon.used_date),
+            "used_date": fields.Datetime.to_string(coupon.used_date) if coupon.used_date else False,
             "coupon": {
                 "id": coupon.coupon_id.id,
                 "name": coupon.coupon_id.name,

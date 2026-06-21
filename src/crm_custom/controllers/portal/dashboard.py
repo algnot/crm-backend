@@ -234,7 +234,7 @@ class PortalDashboardController(http.Controller):
 
             if user_coupon.is_used:
                 entry["used_count"] += 1
-            elif user_coupon.expiration_date and user_coupon.expiration_date < now:
+            elif user_coupon.state == "activated" and user_coupon.expiration_date and user_coupon.expiration_date < now:
                 entry["expired_count"] += 1
             else:
                 entry["redeemed_count"] += 1

@@ -216,7 +216,6 @@ class PortalDashboardController(http.Controller):
             ("acquired_date", "<=", date_to),
         ])
 
-        now = fields.Datetime.now()
         stats = defaultdict(lambda: {
             "coupon_id": False,
             "coupon_name": "",
@@ -232,9 +231,9 @@ class PortalDashboardController(http.Controller):
             entry["coupon_id"] = coupon.id
             entry["coupon_name"] = coupon.name
 
-            if user_coupon.is_used:
+            if user_coupon.is_used or user_coupon.state == "used":
                 entry["used_count"] += 1
-            elif user_coupon.expiration_date and user_coupon.expiration_date < now:
+            elif user_coupon.state == "expired":
                 entry["expired_count"] += 1
             else:
                 entry["redeemed_count"] += 1

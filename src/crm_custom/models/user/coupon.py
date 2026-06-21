@@ -24,6 +24,7 @@ class UserCoupon(models.Model):
         [
             ("redeemed", "Redeemed"),
             ("activated", "Activated"),
+            ("expired", "Expired"),
             ("used", "Used"),
         ],
         string="State",
@@ -119,17 +120,61 @@ class UserCoupon(models.Model):
                AND pc.end_time IS NOT NULL
             """
         )
+        self._cr.execute(
+            """
+            UPDATE crm_user_coupon uc
+               SET state = 'expired'
+              FROM partner_coupon pc
+             WHERE uc.coupon_id = pc.id
+               AND uc.is_used IS NOT TRUE
+               AND uc.state IN ('redeemed', 'activated')
+               AND (
+                   (uc.expiration_date IS NOT NULL AND uc.expiration_date < NOW() AT TIME ZONE 'UTC')
+                   OR (
+                       uc.expiration_date IS NULL
+                       AND pc.end_time IS NOT NULL
+                       AND pc.end_time < NOW() AT TIME ZONE 'UTC'
+                   )
+               )
+            """
+        )
+
+    @api.model
+    def search(self, domain, offset=0, limit=None, order=None):
+        records = super().search(domain, offset=offset, limit=limit, order=order)
+        records._sync_expired_state()
+        return records
+
+    def _get_effective_expiration_date(self):
+        self.ensure_one()
+        return self.expiration_date or self.coupon_id.end_time
+
+    def _sync_expired_state(self):
+        now = fields.Datetime.now()
+        to_expire = self.filtered(
+            lambda record: record.state in ("redeemed", "activated")
+            and not record.is_used
+            and record._get_effective_expiration_date()
+            and now > record._get_effective_expiration_date()
+        )
+        if to_expire:
+            to_expire.write({"state": "expired"})
+        return self
 
     def action_activate(self):
+        self._sync_expired_state()
         now = fields.Datetime.now()
         for record in self:
             if record.state == "used" or record.is_used:
                 raise ValidationError("Coupon ถูกใช้แล้ว")
+            if record.state == "expired":
+                raise ValidationError("Coupon หมดอายุแล้ว")
             if record.state == "activated":
                 continue
 
-            pre_activation_expiration = record.expiration_date or record.coupon_id.end_time
+            pre_activation_expiration = record._get_effective_expiration_date()
             if pre_activation_expiration and now > pre_activation_expiration:
+                record.write({"state": "expired"})
                 raise ValidationError("Coupon หมดอายุแล้ว")
 
             expiration_date = False
@@ -143,13 +188,17 @@ class UserCoupon(models.Model):
             })
 
     def action_mark_used(self):
+        self._sync_expired_state()
         now = fields.Datetime.now()
         for record in self:
             if record.is_used:
                 continue
+            if record.state == "expired":
+                raise ValidationError("Coupon หมดอายุแล้ว")
             if record.state != "activated":
                 raise ValidationError("กรุณาเปิดใช้งานคูปองก่อน")
             if record.expiration_date and now > record.expiration_date:
+                record.write({"state": "expired"})
                 raise ValidationError("Coupon หมดอายุแล้ว")
             record.write({
                 "state": "used",

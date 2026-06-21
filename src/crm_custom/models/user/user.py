@@ -246,7 +246,7 @@ class User(models.Model):
             raise ValidationError("Point currency must belong to this partner.")
 
         return self.env["crm.user.point"].create({
-            "name": f"Admin: {self.display_name}",
+            "name": f"คะแนนจากแอดมิน {self.env.user.display_name}",
             "admin_note": note.strip(),
             "value": value,
             "type": point_type,

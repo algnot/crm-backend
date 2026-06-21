@@ -234,7 +234,7 @@ class Inventory(models.Model):
             "crm_custom.action_crm_partner_receipt_redeem"
         )
         action.update({
-            "name": f"Receipt Redeem - {self.name}",
+            "name": f"คะแนนจากใบเสร็จ {self.name}",
             "domain": [("partner_id", "=", self.id)],
             "context": {
                 "default_partner_id": self.id,

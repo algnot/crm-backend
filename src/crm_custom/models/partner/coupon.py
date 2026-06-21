@@ -151,7 +151,7 @@ class PartnerCoupon(models.Model):
         now = fields.Datetime.now()
 
         point = self.env["crm.user.point"].sudo().create({
-            "name": f"Redeem coupon: {self.name}",
+            "name": f"แลกคูปอง {self.name}",
             "value": self.value,
             "type": "burn",
             "given_date": now,

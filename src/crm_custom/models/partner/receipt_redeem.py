@@ -232,7 +232,7 @@ class PartnerReceiptRedeem(models.Model):
         now = fields.Datetime.now()
 
         spending_point = self.env["crm.user.point"].create({
-            "name": f"Receipt redeem: {self.receipt_number}",
+            "name": f"คะแนนจากใบเสร็จ {self.receipt_number}",
             "admin_note": f"Receipt #{self.receipt_number} approved",
             "value": self.amount,
             "type": "earn",
@@ -245,7 +245,7 @@ class PartnerReceiptRedeem(models.Model):
         reward_point = False
         if reward_value > 0:
             reward_point = self.env["crm.user.point"].create({
-                "name": f"Receipt redeem: {self.receipt_number}",
+                "name": f"คะแนนจากใบเสร็จ {self.receipt_number}",
                 "admin_note": (
                     f"Receipt #{self.receipt_number} "
                     f"({self.amount:g} / {convert_points:g} = {reward_value:g} points)"

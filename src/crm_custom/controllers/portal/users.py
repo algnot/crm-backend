@@ -267,6 +267,8 @@ class PortalUsersController(http.Controller):
             "is_phone_verified": user.is_phone_verified,
             "birth_date": user.birth_date,
             "gender": user.gender,
+            "address": user.address or False,
+            "is_updated_user_info": user.is_updated_user_info,
             "tier": self._serialize_tier(user.tier_id),
             "points": self._serialize_balances(user),
             "create_date": fields.Datetime.to_string(user.create_date),

@@ -83,6 +83,11 @@ class UpdateUserController(http.Controller):
         if "gender" in payload:
             update_vals["gender"] = payload.get("gender") or False
 
+        if "address" in payload:
+            update_vals["address"] = payload.get("address") or False
+
+        update_vals["is_updated_user_info"] = True
+
         if update_vals:
             user.sudo().write(update_vals)
             user = request.env["crm.user"].sudo().browse(user.id)

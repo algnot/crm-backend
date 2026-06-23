@@ -34,6 +34,12 @@ class User(models.Model):
         ("F", "Female"),
         ("O", "Other")
     ], string="Gender", tracking=True)
+    address = fields.Text(string="Address", tracking=True)
+    is_updated_user_info = fields.Boolean(
+        string="Is Updated User Info",
+        default=False,
+        tracking=True,
+    )
 
     active = fields.Boolean(string="Active", default=True, tracking=True)
 

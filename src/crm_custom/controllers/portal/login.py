@@ -4,7 +4,7 @@ from odoo import fields, http
 from odoo.exceptions import AccessDenied, ValidationError
 from odoo.http import request
 
-from ....util.portal_auth import get_portal_role, get_portal_user_from_request
+from ....util.portal_auth import get_authenticated_portal_user, get_portal_role
 from ....util.request import json_response
 
 
@@ -111,12 +111,9 @@ class PortalLoginController(http.Controller):
 
     @http.route( "/api/portal/me", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def portal_me(self, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_authenticated_portal_user()
+        if auth_error:
+            return auth_error
 
         partner = user.crm_partner_id
         return json_response({
@@ -134,12 +131,9 @@ class PortalLoginController(http.Controller):
 
     @http.route("/api/portal/me", type="http", auth="public", methods=["PUT"], csrf=False, cors="*")
     def update_portal_me(self, **kwargs):
-        user = get_portal_user_from_request()
-        if not user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        user, auth_error = get_authenticated_portal_user()
+        if auth_error:
+            return auth_error
 
         try:
             payload = json.loads(request.httprequest.get_data(as_text=True) or "{}")

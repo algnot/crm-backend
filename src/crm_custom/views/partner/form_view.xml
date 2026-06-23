@@ -225,6 +225,16 @@
                         </page>
 
                         <page string="Portal Users" name="portal_users">
+                            <group string="API Settings">
+                                <field name="api_monthly_limit"/>
+                                <field name="api_usage_current_month" readonly="1"/>
+                            </group>
+                            <field name="api_usage_ids" nolabel="1" readonly="1">
+                                <list create="0" delete="0" edit="0">
+                                    <field name="month"/>
+                                    <field name="request_count"/>
+                                </list>
+                            </field>
                             <field name="portal_user_ids" nolabel="1">
                                 <list create="0" delete="0">
                                     <field name="name"/>

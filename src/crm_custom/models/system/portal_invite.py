@@ -97,7 +97,7 @@ class PartnerPortalInvite(models.Model):
             portal_role or self.env["res.users"].PORTAL_ROLE_ADMIN
         )
 
-        if self.env["res.users"]._find_portal_user(partner, normalized_email):
+        if self.env["res.users"]._find_portal_user(partner, normalized_email, active_only=True):
             raise ValidationError(
                 f"Email '{normalized_email}' is already used for this partner."
             )

@@ -42,6 +42,9 @@ class PortalTeamController(http.Controller):
         offset = self._parse_int(kwargs.get("offset")) or 0
 
         user_model = request.env["res.users"].sudo()
+        if active is None or str(active).lower() in {"0", "false", "no"}:
+            user_model = user_model.with_context(active_test=False)
+
         team_users = user_model.search(
             domain,
             limit=limit,

@@ -103,6 +103,21 @@ class Inventory(models.Model):
         string="Portal Users",
         domain=[("is_partner_portal", "=", True)],
     )
+    api_monthly_limit = fields.Integer(
+        string="API Monthly Limit",
+        default=0,
+        tracking=True,
+        help="Maximum API key requests per month for this partner. 0 = unlimited.",
+    )
+    api_usage_current_month = fields.Integer(
+        string="API Usage (Current Month)",
+        compute="_compute_api_usage_current_month",
+    )
+    api_usage_ids = fields.One2many(
+        "partner.portal.api.usage",
+        "partner_id",
+        string="API Usage History",
+    )
 
     coupon_ids = fields.One2many(
         "partner.coupon",
@@ -176,6 +191,11 @@ class Inventory(models.Model):
                     or search_term in (user.phone or "").lower()
                 )
             partner.filtered_user_ids = users
+
+    def _compute_api_usage_current_month(self):
+        usage_model = self.env["partner.portal.api.usage"]
+        for partner in self:
+            partner.api_usage_current_month = usage_model.get_current_month_count(partner)
 
     @api.depends("slug")
     def _compute_liff_setup_url(self):
@@ -276,6 +296,12 @@ class Inventory(models.Model):
                 })
 
         return partners
+
+    @api.constrains("api_monthly_limit")
+    def _check_api_monthly_limit(self):
+        for partner in self:
+            if partner.api_monthly_limit < 0:
+                raise ValidationError("API monthly limit cannot be negative.")
 
     @api.constrains("ui_background_color", "ui_button_color", "ui_text_color", "ui_button_text_color",  "ui_success_color", "ui_error_color")
     def _check_hex_color_fields(self):

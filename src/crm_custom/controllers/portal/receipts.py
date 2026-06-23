@@ -4,19 +4,16 @@ from odoo import fields, http
 from odoo.exceptions import ValidationError
 from odoo.http import request
 
-from ....util.portal_auth import get_portal_user_from_request
+from ....util.portal_auth import get_authenticated_portal_user
 from ....util.request import json_response
 
 
 class PortalReceiptsController(http.Controller):
     @http.route("/api/portal/receipts", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def list_receipts(self, **kwargs):
-        portal_user = get_portal_user_from_request()
-        if not portal_user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        portal_user, auth_error = get_authenticated_portal_user()
+        if auth_error:
+            return auth_error
 
         partner = portal_user.crm_partner_id
         domain = [("partner_id", "=", partner.id)]
@@ -63,12 +60,9 @@ class PortalReceiptsController(http.Controller):
 
     @http.route("/api/portal/receipts/<int:receipt_id>", type="http", auth="public", methods=["GET"], csrf=False, cors="*")
     def get_receipt(self, receipt_id, **kwargs):
-        portal_user = get_portal_user_from_request()
-        if not portal_user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        portal_user, auth_error = get_authenticated_portal_user()
+        if auth_error:
+            return auth_error
 
         receipt_response = self._get_receipt(portal_user.crm_partner_id, receipt_id)
         if receipt_response["error"]:
@@ -83,12 +77,9 @@ class PortalReceiptsController(http.Controller):
 
     @http.route("/api/portal/receipts/<int:receipt_id>", type="http", auth="public", methods=["PUT"], csrf=False, cors="*")
     def update_receipt(self, receipt_id, **kwargs):
-        portal_user = get_portal_user_from_request()
-        if not portal_user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        portal_user, auth_error = get_authenticated_portal_user()
+        if auth_error:
+            return auth_error
 
         receipt_response = self._get_receipt(portal_user.crm_partner_id, receipt_id)
         if receipt_response["error"]:
@@ -132,12 +123,9 @@ class PortalReceiptsController(http.Controller):
 
     @http.route("/api/portal/receipts/<int:receipt_id>/approve", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
     def approve_receipt(self, receipt_id, **kwargs):
-        portal_user = get_portal_user_from_request()
-        if not portal_user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        portal_user, auth_error = get_authenticated_portal_user()
+        if auth_error:
+            return auth_error
 
         receipt_response = self._get_receipt(portal_user.crm_partner_id, receipt_id)
         if receipt_response["error"]:
@@ -168,12 +156,9 @@ class PortalReceiptsController(http.Controller):
 
     @http.route("/api/portal/receipts/<int:receipt_id>/reject", type="http", auth="public", methods=["POST"], csrf=False, cors="*")
     def reject_receipt(self, receipt_id, **kwargs):
-        portal_user = get_portal_user_from_request()
-        if not portal_user:
-            return json_response(
-                {"error": "unauthorized", "message": "Invalid or expired token."},
-                status=401,
-            )
+        portal_user, auth_error = get_authenticated_portal_user()
+        if auth_error:
+            return auth_error
 
         receipt_response = self._get_receipt(portal_user.crm_partner_id, receipt_id)
         if receipt_response["error"]:

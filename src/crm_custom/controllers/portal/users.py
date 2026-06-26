@@ -265,7 +265,7 @@ class PortalUsersController(http.Controller):
             "is_email_verified": user.is_email_verified,
             "phone": user.phone,
             "is_phone_verified": user.is_phone_verified,
-            "birth_date": user.birth_date,
+            "birth_date": fields.Date.to_string(user.birth_date) if user.birth_date else False,
             "gender": user.gender,
             "address": user.address or False,
             "is_updated_user_info": user.is_updated_user_info,

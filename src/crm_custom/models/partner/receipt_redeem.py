@@ -1,4 +1,5 @@
 import math
+import secrets
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
@@ -278,6 +279,66 @@ class PartnerReceiptRedeem(models.Model):
             "state": "rejected",
             "reviewed_date": fields.Datetime.now(),
             "reviewed_by_id": self.env.user.id,
+        })
+
+    @api.model
+    def _generate_manual_receipt_number(self, partner):
+        slug = (partner.slug or "partner").strip()
+        for _ in range(10):
+            now = fields.Datetime.now()
+            datetime_part = now.strftime("%Y%m%d_%H%M%S")
+            random_part = f"{secrets.randbelow(10000):04d}"
+            receipt_number = f"manual_receipt_{slug}_{datetime_part}_{random_part}"
+            duplicate = self.search([
+                ("partner_id", "=", partner.id),
+                ("receipt_number", "=", receipt_number),
+                ("state", "!=", "rejected"),
+            ], limit=1)
+            if not duplicate:
+                return receipt_number
+
+        raise ValidationError("ไม่สามารถสร้างเลขที่ใบเสร็จได้ กรุณาลองใหม่อีกครั้ง")
+
+    @api.model
+    def lookup_member(self, partner, query):
+        query = (query or "").strip()
+        if not query:
+            raise ValidationError("กรุณาระบุข้อมูลสมาชิก")
+
+        user_model = self.env["crm.user"].sudo()
+        domain_base = [("partner_id", "=", partner.id)]
+        for field_name in ("line_user_id", "phone", "email"):
+            user = user_model.search(
+                domain_base + [(field_name, "=", query)],
+                limit=1,
+            )
+            if user:
+                return user
+
+        return False
+
+    @api.model
+    def submit_manual_receipt(self, partner, user, amount, image_data):
+        amount = float(amount or 0)
+        if amount <= 0:
+            raise ValidationError("กรุณาระบุมูลค่าสินค้ามากกว่า 0")
+        if not image_data:
+            raise ValidationError("กรุณาอัปโหลดรูปใบเสร็จ")
+
+        receipt_number = self._generate_manual_receipt_number(partner)
+        receipt_image_url = self._upload_image_field(
+            "receipt_image",
+            image_data,
+        )
+
+        return self.create({
+            "receipt_number": receipt_number,
+            "receipt_image": receipt_image_url,
+            "partner_id": partner.id,
+            "user_id": user.id,
+            "amount": amount,
+            "submitted_date": fields.Datetime.now(),
+            "state": "pending",
         })
 
     @api.model

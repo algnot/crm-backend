@@ -60,6 +60,12 @@ class Inventory(models.Model):
 
     ui_crm_required_phone = fields.Boolean(string="Require Phone", default=False, tracking=True)
     ui_crm_required_email = fields.Boolean(string="Require Email", default=False, tracking=True)
+    portal_manual_receipt_require_image = fields.Boolean(
+        string="Require Receipt Image (Portal Manual)",
+        default=True,
+        tracking=True,
+        help="If enabled, portal staff must upload a receipt image when creating manual receipts.",
+    )
     ui_custom_field_ids = fields.One2many(
         "partner.custom.field",
         "partner_id",

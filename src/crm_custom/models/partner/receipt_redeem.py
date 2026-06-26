@@ -322,14 +322,16 @@ class PartnerReceiptRedeem(models.Model):
         amount = float(amount or 0)
         if amount <= 0:
             raise ValidationError("กรุณาระบุมูลค่าสินค้ามากกว่า 0")
-        if not image_data:
+        if partner.portal_manual_receipt_require_image and not image_data:
             raise ValidationError("กรุณาอัปโหลดรูปใบเสร็จ")
 
         receipt_number = self._generate_manual_receipt_number(partner)
-        receipt_image_url = self._upload_image_field(
-            "receipt_image",
-            image_data,
-        )
+        receipt_image_url = False
+        if image_data:
+            receipt_image_url = self._upload_image_field(
+                "receipt_image",
+                image_data,
+            )
 
         return self.create({
             "receipt_number": receipt_number,

@@ -41,6 +41,7 @@
                             <field name="slug"/>
                             <field name="ui_crm_required_phone"/>
                             <field name="ui_crm_required_email"/>
+                            <field name="portal_manual_receipt_require_image"/>
                         </group>
                         <group string="Line Setting">
                             <field name="partner_line_liff_id"/>

@@ -99,7 +99,7 @@ class PortalReceiptsController(http.Controller):
             return auth_error
 
         partner = portal_user.crm_partner_id
-        user_id, amount, image_data, parse_error = self._parse_manual_payload()
+        user_id, amount, image_data, parse_error = self._parse_manual_payload(partner)
         if parse_error:
             return parse_error
 
@@ -261,7 +261,8 @@ class PortalReceiptsController(http.Controller):
             "receipt": self._serialize_receipt(receipt),
         })
 
-    def _parse_manual_payload(self):
+    def _parse_manual_payload(self, partner):
+        require_image = partner.portal_manual_receipt_require_image
         upload = request.httprequest.files
         if upload:
             user_id = self._parse_int(
@@ -278,7 +279,7 @@ class PortalReceiptsController(http.Controller):
                     {"error": "invalid_request", "message": "กรุณาระบุสมาชิก"},
                     status=400,
                 )
-            if not image_file:
+            if require_image and not image_file:
                 return None, None, None, json_response(
                     {"error": "invalid_request", "message": "กรุณาอัปโหลดรูปใบเสร็จ"},
                     status=400,
@@ -289,7 +290,12 @@ class PortalReceiptsController(http.Controller):
             except (TypeError, ValueError):
                 amount = 0
 
-            return user_id, amount, base64.b64encode(image_file.read()), None
+            image_data = (
+                base64.b64encode(image_file.read())
+                if image_file
+                else False
+            )
+            return user_id, amount, image_data, None
 
         payload, parse_error = self._parse_payload()
         if parse_error:
@@ -304,7 +310,7 @@ class PortalReceiptsController(http.Controller):
                 {"error": "invalid_request", "message": "กรุณาระบุสมาชิก"},
                 status=400,
             )
-        if not image_data:
+        if require_image and not image_data:
             return None, None, None, json_response(
                 {"error": "invalid_request", "message": "กรุณาอัปโหลดรูปใบเสร็จ"},
                 status=400,
@@ -315,7 +321,7 @@ class PortalReceiptsController(http.Controller):
         except (TypeError, ValueError):
             amount = 0
 
-        return user_id, amount, image_data, None
+        return user_id, amount, image_data or False, None
 
     def _parse_payload(self):
         try:

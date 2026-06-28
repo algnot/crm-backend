@@ -36,6 +36,17 @@ class UserWarrantyController(http.Controller):
         return json_response(self._serialize_warranty_options(partner))
 
     @http.route(
+        "/api/partner/<string:slug>/user/warranty",
+        type="http",
+        auth="public",
+        methods=["POST"],
+        csrf=False,
+        cors="*",
+    )
+    def submit_warranty(self, slug, **kwargs):
+        return self._submit_warranty(slug)
+
+    @http.route(
         "/api/partner/<string:slug>/user/<string:user_id>/warranty",
         type="http",
         auth="public",
@@ -43,12 +54,59 @@ class UserWarrantyController(http.Controller):
         csrf=False,
         cors="*",
     )
-    def submit_warranty(self, slug, user_id, **kwargs):
+    def submit_warranty_legacy(self, slug, user_id, **kwargs):
+        return self._submit_warranty(slug)
+
+    @http.route(
+        "/api/partner/<string:slug>/user/warranty",
+        type="http",
+        auth="public",
+        methods=["GET"],
+        csrf=False,
+        cors="*",
+    )
+    def list_warranties(self, slug, **kwargs):
+        return self._list_warranties(slug)
+
+    @http.route(
+        "/api/partner/<string:slug>/user/<string:user_id>/warranty",
+        type="http",
+        auth="public",
+        methods=["GET"],
+        csrf=False,
+        cors="*",
+    )
+    def list_warranties_legacy(self, slug, user_id, **kwargs):
+        return self._list_warranties(slug)
+
+    @http.route(
+        "/api/partner/<string:slug>/user/warranty/<int:warranty_id>",
+        type="http",
+        auth="public",
+        methods=["GET"],
+        csrf=False,
+        cors="*",
+    )
+    def get_warranty(self, slug, warranty_id, **kwargs):
+        return self._get_warranty(slug, warranty_id)
+
+    @http.route(
+        "/api/partner/<string:slug>/user/<string:user_id>/warranty/<int:warranty_id>",
+        type="http",
+        auth="public",
+        methods=["GET"],
+        csrf=False,
+        cors="*",
+    )
+    def get_warranty_legacy(self, slug, user_id, warranty_id, **kwargs):
+        return self._get_warranty(slug, warranty_id)
+
+    def _submit_warranty(self, slug):
         line_profile, auth_error = get_line_profile_from_request()
         if auth_error:
             return auth_error
 
-        user_response = self._get_user(slug, user_id, line_profile)
+        user_response = self._get_user_from_token(slug, line_profile)
         if user_response["error"]:
             return user_response["error"]
 
@@ -80,20 +138,12 @@ class UserWarrantyController(http.Controller):
                 status=400,
             )
 
-    @http.route(
-        "/api/partner/<string:slug>/user/<string:user_id>/warranty",
-        type="http",
-        auth="public",
-        methods=["GET"],
-        csrf=False,
-        cors="*",
-    )
-    def list_warranties(self, slug, user_id, **kwargs):
+    def _list_warranties(self, slug):
         line_profile, auth_error = get_line_profile_from_request()
         if auth_error:
             return auth_error
 
-        user_response = self._get_user(slug, user_id, line_profile)
+        user_response = self._get_user_from_token(slug, line_profile)
         if user_response["error"]:
             return user_response["error"]
 
@@ -114,20 +164,12 @@ class UserWarrantyController(http.Controller):
             ],
         })
 
-    @http.route(
-        "/api/partner/<string:slug>/user/<string:user_id>/warranty/<int:warranty_id>",
-        type="http",
-        auth="public",
-        methods=["GET"],
-        csrf=False,
-        cors="*",
-    )
-    def get_warranty(self, slug, user_id, warranty_id, **kwargs):
+    def _get_warranty(self, slug, warranty_id):
         line_profile, auth_error = get_line_profile_from_request()
         if auth_error:
             return auth_error
 
-        user_response = self._get_user(slug, user_id, line_profile)
+        user_response = self._get_user_from_token(slug, line_profile)
         if user_response["error"]:
             return user_response["error"]
 
@@ -218,13 +260,14 @@ class UserWarrantyController(http.Controller):
 
         return {"partner": partner, "error": False}
 
-    def _get_user(self, slug, user_id, line_profile):
-        if line_profile.get("userId") != user_id:
+    def _get_user_from_token(self, slug, line_profile):
+        line_user_id = line_profile.get("userId")
+        if not line_user_id:
             return {
                 "partner": False,
                 "user": False,
                 "error": json_response(
-                    {"error": "unauthorized", "message": "Invalid LINE user."},
+                    {"error": "unauthorized", "message": "Invalid LINE access token."},
                     status=401,
                 ),
             }
@@ -239,7 +282,7 @@ class UserWarrantyController(http.Controller):
 
         partner = partner_response["partner"]
         user = request.env["crm.user"].sudo().search([
-            ("line_user_id", "=", user_id),
+            ("line_user_id", "=", line_user_id),
             ("partner_id", "=", partner.id),
         ], limit=1)
         if not user:

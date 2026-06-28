@@ -49,9 +49,13 @@ class PartnerWarrantyStatus(models.Model):
 
     @api.model
     def ensure_default_statuses(self, partner):
-        existing = self.search([("partner_id", "=", partner.id)], limit=1)
+        existing = self.with_context(active_test=False).search([
+            ("partner_id", "=", partner.id),
+        ], limit=1)
         if existing:
-            return self.search([("partner_id", "=", partner.id)])
+            return self.with_context(active_test=False).search([
+                ("partner_id", "=", partner.id),
+            ])
 
         created = self.create([
             {

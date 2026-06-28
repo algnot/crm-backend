@@ -29,11 +29,13 @@ class PartnerWarrantyContributor(models.Model):
 
     @api.model
     def ensure_default_items(self, partner):
-        existing = self.search([
+        existing = self.with_context(active_test=False).search([
             ("partner_id", "=", partner.id),
             ("name", "=", DEFAULT_OTHER_CONTRIBUTOR_NAME),
         ], limit=1)
         if existing:
+            if not existing.active:
+                existing.write({"active": True})
             return existing
 
         return self.create({

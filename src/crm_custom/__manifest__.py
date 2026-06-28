@@ -1,6 +1,6 @@
 {
     "name": "CRM Custom Module",
-    "version": "1.0.36",
+    "version": "1.0.39",
     "summary": "CRM Custom Module",
     "author": "tk dev",
     "depends": ["base", "web", "mail"],
@@ -21,6 +21,7 @@
         "views/partner/coupon_create_wizard_view.xml",
         "views/partner/coupon_add_codes_wizard_view.xml",
         "views/partner/receipt_redeem_view.xml",
+        "views/partner/warranty_view.xml",
         "views/partner/portal_user_wizard_view.xml",
         "views/partner/portal_api_key_wizard_view.xml",
         "views/partner/action_view.xml",

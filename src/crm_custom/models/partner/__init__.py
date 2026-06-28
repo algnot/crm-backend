@@ -7,3 +7,8 @@ from . import coupon
 from . import coupon_code
 from . import ads
 from . import receipt_redeem
+from . import warranty_product
+from . import warranty_contributor
+from . import warranty_status
+from . import warranty_comment
+from . import warranty

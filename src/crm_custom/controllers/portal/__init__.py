@@ -5,6 +5,7 @@ from . import coupons
 from . import currencies
 from . import redeem_qrcodes
 from . import receipts
+from . import warranties
 from . import team
 from . import dashboard
 from . import api_key

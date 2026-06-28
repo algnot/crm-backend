@@ -66,6 +66,12 @@ class Inventory(models.Model):
         tracking=True,
         help="If enabled, portal staff must upload a receipt image when creating manual receipts.",
     )
+    ui_warranty_enabled = fields.Boolean(
+        string="Enable Warranty Registration",
+        default=False,
+        tracking=True,
+        help="If enabled, members can register product warranties and the warranty tab appears in the partner portal.",
+    )
     ui_custom_field_ids = fields.One2many(
         "partner.custom.field",
         "partner_id",
@@ -101,6 +107,27 @@ class Inventory(models.Model):
         "crm.partner.receipt.redeem",
         "partner_id",
         string="Receipt Redeems",
+    )
+
+    warranty_product_ids = fields.One2many(
+        "partner.warranty.product",
+        "partner_id",
+        string="Warranty Products",
+    )
+    warranty_contributor_ids = fields.One2many(
+        "partner.warranty.contributor",
+        "partner_id",
+        string="Warranty Purchase Channels",
+    )
+    warranty_status_ids = fields.One2many(
+        "partner.warranty.status",
+        "partner_id",
+        string="Warranty Statuses",
+    )
+    warranty_ids = fields.One2many(
+        "partner.warranty",
+        "partner_id",
+        string="Warranty Registrations",
     )
 
     portal_user_ids = fields.One2many(
@@ -270,6 +297,31 @@ class Inventory(models.Model):
         })
         return action
 
+    def action_open_warranties(self):
+        self.ensure_one()
+        action = self.env["ir.actions.act_window"]._for_xml_id(
+            "crm_custom.action_partner_warranty"
+        )
+        action.update({
+            "name": f"ลงทะเบียนรับประกัน {self.name}",
+            "domain": [("partner_id", "=", self.id)],
+            "context": {
+                "default_partner_id": self.id,
+            },
+            "target": "current",
+        })
+        return action
+
+    def ensure_warranty_defaults(self):
+        product_model = self.env["partner.warranty.product"]
+        contributor_model = self.env["partner.warranty.contributor"]
+        status_model = self.env["partner.warranty.status"]
+
+        for partner in self:
+            product_model.ensure_default_items(partner)
+            contributor_model.ensure_default_items(partner)
+            status_model.ensure_default_statuses(partner)
+
     @api.model_create_multi
     def create(self, vals_list):
         partners = super().create(vals_list)
@@ -300,6 +352,8 @@ class Inventory(models.Model):
                     "convert_points": 25,
                     "partner_id": partner.id,
                 })
+
+            partner.ensure_warranty_defaults()
 
         return partners
 

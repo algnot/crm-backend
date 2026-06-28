@@ -107,6 +107,7 @@ class PortalLoginController(http.Controller):
                 "slug": partner.slug,
                 "logo_url": partner.logo,
                 "manual_receipt_require_image": partner.portal_manual_receipt_require_image,
+                "warranty_enabled": partner.ui_warranty_enabled,
             },
         })
 
@@ -128,6 +129,7 @@ class PortalLoginController(http.Controller):
                 "slug": partner.slug,
                 "logo_url": partner.logo,
                 "manual_receipt_require_image": partner.portal_manual_receipt_require_image,
+                "warranty_enabled": partner.ui_warranty_enabled,
             },
         })
 
@@ -182,5 +184,6 @@ class PortalLoginController(http.Controller):
                 "slug": partner.slug,
                 "logo_url": partner.logo,
                 "manual_receipt_require_image": partner.portal_manual_receipt_require_image,
+                "warranty_enabled": partner.ui_warranty_enabled,
             },
         })

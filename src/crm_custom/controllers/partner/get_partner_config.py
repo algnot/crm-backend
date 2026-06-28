@@ -26,7 +26,7 @@ class PartnerConfigController(http.Controller):
         return json_response(self._serialize_partner_config(partner))
 
     def _serialize_partner_config(self, partner):
-        return {
+        config = {
             "name": partner.name,
             "slug": partner.slug,
             "description": partner.description,
@@ -39,6 +39,9 @@ class PartnerConfigController(http.Controller):
             "ads": self._serialize_active_ads(partner),
             "tier": self._serialize_tier(partner),
         }
+        if partner.ui_warranty_enabled:
+            config["warranty"] = self._serialize_warranty_config(partner)
+        return config
 
     def _serialize_tier(self, partner):
         result = []
@@ -104,4 +107,36 @@ class PartnerConfigController(http.Controller):
             "message": ad.message,
             "start_date": fields.Datetime.to_string(ad.start_date),
             "end_date": fields.Datetime.to_string(ad.end_date),
+        }
+
+    def _serialize_warranty_config(self, partner):
+        partner.ensure_warranty_defaults()
+        products = request.env["partner.warranty.product"].sudo().search([
+            ("partner_id", "=", partner.id),
+            ("active", "=", True),
+        ], order="name asc, id asc")
+        contributors = request.env["partner.warranty.contributor"].sudo().search([
+            ("partner_id", "=", partner.id),
+            ("active", "=", True),
+        ], order="sequence asc, name asc, id asc")
+
+        return {
+            "enabled": True,
+            "products": [
+                {
+                    "id": product.id,
+                    "name": product.name,
+                    "description": product.description or False,
+                    "sku": product.sku or False,
+                    "image_url": product.image or False,
+                }
+                for product in products
+            ],
+            "contributors": [
+                {
+                    "id": contributor.id,
+                    "name": contributor.name,
+                }
+                for contributor in contributors
+            ],
         }

@@ -8,3 +8,4 @@ from . import submit_email
 from . import redeem_point
 from . import coupon
 from . import receipt_redeem
+from . import warranty

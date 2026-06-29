@@ -34,8 +34,8 @@ class PartnerWarrantyContributor(models.Model):
             ("name", "=", DEFAULT_OTHER_CONTRIBUTOR_NAME),
         ], limit=1)
         if existing:
-            if not existing.active:
-                existing.write({"active": True})
+            # if not existing.active:
+            #     existing.write({"active": True})
             return existing
 
         return self.create({

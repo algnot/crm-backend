@@ -69,8 +69,8 @@ class PartnerWarrantyProduct(models.Model):
             ("name", "=", DEFAULT_OTHER_PRODUCT_NAME),
         ], limit=1)
         if existing:
-            if not existing.active:
-                existing.write({"active": True})
+            # if not existing.active:
+            #     existing.write({"active": True})
             return existing
 
         return self.create({
